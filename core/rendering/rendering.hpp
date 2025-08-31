@@ -20,7 +20,6 @@ public:
     DX11Renderer();
     ~DX11Renderer();
 
-    bool initialize(HWND hwnd, int width, int height, bool fullscreen = false);
     bool initialize(const char* windowTitle, int width, int height, bool fullscreen = false);
     
     void shutdown();
@@ -29,7 +28,7 @@ public:
     void endFrame();
     
     void onResize(int width, int height);
-    
+
     bool processMessages();
     
     HWND getWindow() const { return m_hwnd; }
@@ -74,7 +73,6 @@ private:
     ComPtr<ID3D11BlendState> m_blendState;
     
     HWND m_hwnd;
-    bool m_ownsWindow;
     int m_width;
     int m_height;
     bool m_fullscreen;

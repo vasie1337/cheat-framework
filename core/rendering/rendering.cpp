@@ -4,7 +4,6 @@
 
 DX11Renderer::DX11Renderer()
     : m_hwnd(nullptr)
-    , m_ownsWindow(false)
     , m_width(0)
     , m_height(0)
     , m_fullscreen(false)
@@ -31,7 +30,6 @@ bool DX11Renderer::initialize(const char* windowTitle, int width, int height, bo
         return true;
     }
 
-    // Create window
     HWND hwnd = createWindow(windowTitle, width, height);
     if (!hwnd)
     {
@@ -39,24 +37,8 @@ bool DX11Renderer::initialize(const char* windowTitle, int width, int height, bo
         return false;
     }
 
-    m_hwnd = hwnd;
-    m_ownsWindow = true;
-
-    // Show window
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
-
-    // Initialize with the created window
-    return initialize(hwnd, width, height, fullscreen);
-}
-
-bool DX11Renderer::initialize(HWND hwnd, int width, int height, bool fullscreen)
-{
-    if (m_initialized)
-    {
-        log_warning("Renderer already initialized");
-        return true;
-    }
 
     m_hwnd = hwnd;
     m_width = width;
@@ -131,7 +113,7 @@ void DX11Renderer::shutdown()
     m_context.Reset();
     m_device.Reset();
 
-    if (m_ownsWindow && m_hwnd)
+    if (m_hwnd)
     {
         DestroyWindow(m_hwnd);
         m_hwnd = nullptr;
@@ -203,12 +185,12 @@ bool DX11Renderer::createDevice()
     if (SUCCEEDED(hr) && m_msaaQuality > 0)
     {
         m_sampleCount = 4;
-        log_info("4x MSAA supported with quality level: %i", m_msaaQuality - 1);
+        log_debug("4x MSAA supported with quality level: %i", m_msaaQuality - 1);
     }
     else
     {
         m_sampleCount = 1;
-        log_info("MSAA not supported, using no anti-aliasing");
+        log_debug("MSAA not supported, using no anti-aliasing");
     }
 
     log_debug("D3D11 device created with feature level: 0x%04X", m_featureLevel);
@@ -571,11 +553,6 @@ LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 bool DX11Renderer::processMessages()
 {
-    if (!m_ownsWindow)
-    {
-        return IsWindow(m_hwnd);
-    }
-
     MSG msg = {};
     while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
     {

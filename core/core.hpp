@@ -22,7 +22,6 @@ public:
 	Core& with_logger_level(LogLevel level) { m_logger_level_kind = level; return *this; }
 	Core& with_window_title(const char* title) { m_window_title = title; return *this; }
 	Core& with_window_size(int width, int height) { m_window_width = width; m_window_height = height; return *this; }
-	Core& with_external_window(HWND hwnd) { m_external_hwnd = hwnd; return *this; }
 
 	bool update();
 	void shutdown();
@@ -37,7 +36,6 @@ private:
 	std::unique_ptr<DX11Renderer> m_renderer;
 	
 	const char* m_window_title = "Cheat Framework";
-	HWND m_external_hwnd = nullptr;
 	int m_window_width = 1280;
 	int m_window_height = 720;
 };	
