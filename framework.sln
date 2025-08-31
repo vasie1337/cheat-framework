@@ -5,7 +5,12 @@ VisualStudioVersion = 17.14.36202.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "core\core.vcxproj", "{B3CC6BFC-40BF-40C7-9A52-C730F84ADCBC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "assaultcube", "cheats\assaultcube\assaultcube.vcxproj", "{7FF32420-885B-4F70-A69C-8412F5CADAA2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cheat-ac", "cheats\cheat-ac\cheat-ac.vcxproj", "{7FF32420-885B-4F70-A69C-8412F5CADAA2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B3CC6BFC-40BF-40C7-9A52-C730F84ADCBC} = {B3CC6BFC-40BF-40C7-9A52-C730F84ADCBC}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cheat-cs2", "cheats\cheat-cs2\cheat-cs2.vcxproj", "{14374A87-08C3-4CED-A7C0-4E5392AFAD00}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B3CC6BFC-40BF-40C7-9A52-C730F84ADCBC} = {B3CC6BFC-40BF-40C7-9A52-C730F84ADCBC}
 	EndProjectSection
@@ -34,6 +39,14 @@ Global
 		{7FF32420-885B-4F70-A69C-8412F5CADAA2}.Release|x64.Build.0 = Release|x64
 		{7FF32420-885B-4F70-A69C-8412F5CADAA2}.Release|x86.ActiveCfg = Release|Win32
 		{7FF32420-885B-4F70-A69C-8412F5CADAA2}.Release|x86.Build.0 = Release|Win32
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Debug|x64.ActiveCfg = Debug|x64
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Debug|x64.Build.0 = Debug|x64
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Debug|x86.ActiveCfg = Debug|Win32
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Debug|x86.Build.0 = Debug|Win32
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Release|x64.ActiveCfg = Release|x64
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Release|x64.Build.0 = Release|x64
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Release|x86.ActiveCfg = Release|Win32
+		{14374A87-08C3-4CED-A7C0-4E5392AFAD00}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
