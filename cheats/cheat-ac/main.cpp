@@ -4,7 +4,7 @@
 
 int main() {
 	Core core;
-	core.with_name("AssaultCube")
+	core.with_name("Counter-Strike 2")
 		.with_access_adapter(AccessAdapter::Local)
 		.with_render_backend(RenderBackend::DX11)
 		.with_logger_backend(LoggerBackend::Console)

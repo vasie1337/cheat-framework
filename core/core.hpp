@@ -41,8 +41,8 @@ public:
 	void shutdown();
 
 private:
-	AccessAdapter m_access_adapter;
-	RenderBackend m_render_backend;
+	AccessAdapter m_access_adapter = AccessAdapter::Local;
+	RenderBackend m_render_backend = RenderBackend::DX11;
 	LoggerBackend m_logger_backend = LoggerBackend::Console;
 	LogLevel m_logger_level = LogLevel::Debug;
 	std::string m_cheat_name;

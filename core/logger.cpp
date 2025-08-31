@@ -90,7 +90,7 @@ void Logger::log_internal(LogLevel level, const char* format, va_list args) {
     const char* color = get_level_color(level);
    
     if (m_backend == LoggerBackend::Console || m_backend == LoggerBackend::Both) {
-        int level_padding = 8 - strlen(level_str);
+        int level_padding = 8 - static_cast<int>(strlen(level_str));
 
         printf("%s[%s]%s%*s%s[%s]%s %s\n",
             BRIGHT_BLACK, timestamp.c_str(),
