@@ -4,9 +4,11 @@
 
 int main() {
 	Core core;
-	core.with_access_adapter(AccessAdapter::Local)
+	core.with_access_adapter(AccessAdapterKind::Local)
 		.with_logger_backend(LoggerBackend::Console)
-		.with_logger_level(LogLevel::Debug);
+		.with_logger_level(LogLevel::Debug)
+		.with_window_title("CS2 Cheat Framework")
+		.with_window_size(1280, 720);
 
 	if (!core.initialize()) {
 		log_critical("Failed to initialize core");
@@ -16,7 +18,6 @@ int main() {
 	log_info("Counter-Strike 2 cheat initialized");
 
 	while (core.update()) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
 	core.shutdown();

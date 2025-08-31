@@ -3,9 +3,11 @@
   <ItemGroup>
     <ClCompile Include="core.cpp" />
     <ClCompile Include="logger\logger.cpp" />
+    <ClCompile Include="rendering\rendering.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />
+    <ClInclude Include="rendering\rendering.hpp" />
   </ItemGroup>
 </Project>
