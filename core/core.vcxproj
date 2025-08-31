@@ -19,11 +19,26 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\ext\imgui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="..\ext\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\ext\imgui\imgui.cpp" />
+    <ClCompile Include="..\ext\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\ext\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\ext\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="logger\logger.cpp" />
     <ClCompile Include="rendering\rendering.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ext\imgui\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="..\ext\imgui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="..\ext\imgui\imconfig.h" />
+    <ClInclude Include="..\ext\imgui\imgui.h" />
+    <ClInclude Include="..\ext\imgui\imgui_internal.h" />
+    <ClInclude Include="..\ext\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\ext\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\ext\imgui\imstb_truetype.h" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />
     <ClInclude Include="rendering\rendering.hpp" />
@@ -83,22 +98,25 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)lib\</OutDir>
     <IntDir>$(SolutionDir)lib\$(ProjectName)\</IntDir>
-    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)lib\</OutDir>
     <IntDir>$(SolutionDir)lib\$(ProjectName)\</IntDir>
-    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)lib\</OutDir>
     <IntDir>$(SolutionDir)lib\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)lib\</OutDir>
     <IntDir>$(SolutionDir)lib\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

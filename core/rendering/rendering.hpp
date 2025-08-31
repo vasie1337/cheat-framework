@@ -7,10 +7,15 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <dwmapi.h>
+
+struct ImDrawData;
+struct ImGuiContext;
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "dwmapi.lib")
 
 using Microsoft::WRL::ComPtr;
 
@@ -21,8 +26,15 @@ public:
     ~DX11Renderer();
 
     bool initialize(const char* windowTitle, int width, int height, bool fullscreen = false);
+    bool initializeOverlay(const char* targetWindowTitle, const char* targetWindowClass = nullptr);
     
     void shutdown();
+    
+    bool initializeImGui();
+    void shutdownImGui();
+    void beginImGuiFrame();
+    void endImGuiFrame();
+    void renderImGui();
     
     void beginFrame(float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
     void endFrame();
@@ -43,6 +55,10 @@ public:
     bool isInitialized() const { return m_initialized; }
     bool isVSyncEnabled() const { return m_vsyncEnabled; }
     void setVSync(bool enabled) { m_vsyncEnabled = enabled; }
+    
+    void updateOverlayPosition();
+    void setOverlayInteractive(bool interactive);
+    HWND getTargetWindow() const { return m_targetHwnd; }
 
 private:
     bool createDevice();
@@ -56,6 +72,9 @@ private:
     void releaseRenderTargets();
     
     HWND createWindow(const char* title, int width, int height);
+    HWND createOverlayWindow();
+    void makeWindowTransparent(HWND hwnd);
+    HWND findTargetWindow(const char* windowTitle, const char* windowClass);
     static LRESULT CALLBACK windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     
@@ -84,4 +103,24 @@ private:
     DXGI_FORMAT m_backBufferFormat;
     UINT m_msaaQuality;
     UINT m_sampleCount;
+    
+    HWND m_targetHwnd;
+    RECT m_targetRect;
+    MARGINS m_margins;
+    
+    // ImGui resources
+    bool m_imguiInitialized;
+    ComPtr<ID3D11ShaderResourceView> m_fontTextureView;
+    ComPtr<ID3D11SamplerState> m_fontSampler;
+    ComPtr<ID3D11Buffer> m_vertexBuffer;
+    ComPtr<ID3D11Buffer> m_indexBuffer;
+    ComPtr<ID3D11Buffer> m_vertexConstantBuffer;
+    ComPtr<ID3D11InputLayout> m_inputLayout;
+    ComPtr<ID3D11VertexShader> m_vertexShader;
+    ComPtr<ID3D11PixelShader> m_pixelShader;
+    ComPtr<ID3D11BlendState> m_imguiBlendState;
+    ComPtr<ID3D11RasterizerState> m_imguiRasterizerState;
+    ComPtr<ID3D11DepthStencilState> m_imguiDepthStencilState;
+    int m_vertexBufferSize;
+    int m_indexBufferSize;
 };

@@ -21,7 +21,11 @@ public:
 	Core& with_logger_backend(LoggerBackend backend) { m_logger_backend_kind = backend; return *this; }
 	Core& with_logger_level(LogLevel level) { m_logger_level_kind = level; return *this; }
 	Core& with_window_title(const char* title) { m_window_title = title; return *this; }
-	Core& with_window_size(int width, int height) { m_window_width = width; m_window_height = height; return *this; }
+	Core& with_target_window(const char* title, const char* className = nullptr) { 
+		m_target_window_title = title; 
+		m_target_window_class = className; 
+		return *this; 
+	}
 
 	bool update();
 	void shutdown();
@@ -36,6 +40,10 @@ private:
 	std::unique_ptr<DX11Renderer> m_renderer;
 	
 	const char* m_window_title = "Cheat Framework";
-	int m_window_width = 1280;
-	int m_window_height = 720;
+	
+	const char* m_target_window_title = nullptr;
+	const char* m_target_window_class = nullptr;
+
+	// when enabled we need interactivity so we set the window flags to not be transparent
+	bool m_show_widgets = false;
 };	

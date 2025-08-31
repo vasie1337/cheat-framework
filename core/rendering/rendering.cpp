@@ -1,6 +1,15 @@
 #include "rendering.hpp"
 #include <core/logger/logger.hpp>
 #include <stdexcept>
+#include <cstring>
+
+// ImGui includes - assuming these will be provided
+#include <imgui.h>
+#include <backends/imgui_impl_win32.h>
+#include <backends/imgui_impl_dx11.h>
+
+// Forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DX11Renderer::DX11Renderer()
     : m_hwnd(nullptr)
@@ -14,7 +23,13 @@ DX11Renderer::DX11Renderer()
     , m_backBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM)
     , m_msaaQuality(0)
     , m_sampleCount(1)
+    , m_targetHwnd(nullptr)
+    , m_imguiInitialized(false)
+    , m_vertexBufferSize(5000)
+    , m_indexBufferSize(10000)
 {
+    m_targetRect = { 0, 0, 0, 0 };
+    m_margins = { -1, -1, -1, -1 };
 }
 
 DX11Renderer::~DX11Renderer()
@@ -85,8 +100,110 @@ bool DX11Renderer::initialize(const char* windowTitle, int width, int height, bo
 
     setViewport();
 
+    // Initialize ImGui
+    if (!initializeImGui())
+    {
+        log_warning("Failed to initialize ImGui");
+    }
+
     m_initialized = true;
     log_debug("DirectX 11 Renderer initialized successfully");
+    return true;
+}
+
+bool DX11Renderer::initializeOverlay(const char* targetWindowTitle, const char* targetWindowClass)
+{
+    if (m_initialized)
+    {
+        log_warning("Renderer already initialized");
+        return true;
+    }
+
+    // Find target window
+    m_targetHwnd = findTargetWindow(targetWindowTitle, targetWindowClass);
+    if (!m_targetHwnd)
+    {
+        log_error("Failed to find target window: %s", targetWindowTitle);
+        return false;
+    }
+
+    // Get target window dimensions
+    if (!GetWindowRect(m_targetHwnd, &m_targetRect))
+    {
+        log_error("Failed to get target window rect");
+        return false;
+    }
+
+    m_width = m_targetRect.right - m_targetRect.left;
+    m_height = m_targetRect.bottom - m_targetRect.top;
+
+    log_debug("Creating overlay window (%ix%i)", m_width, m_height);
+
+    // Create overlay window
+    HWND hwnd = createOverlayWindow();
+    if (!hwnd)
+    {
+        log_error("Failed to create overlay window");
+        return false;
+    }
+
+    m_hwnd = hwnd;
+    m_fullscreen = false;
+
+    // Initialize D3D11
+    if (!createDevice())
+    {
+        log_error("Failed to create D3D11 device");
+        return false;
+    }
+
+    if (!createSwapChain(hwnd))
+    {
+        log_error("Failed to create swap chain");
+        return false;
+    }
+
+    if (!createRenderTargetView())
+    {
+        log_error("Failed to create render target view");
+        return false;
+    }
+
+    if (!createDepthStencilBuffer())
+    {
+        log_error("Failed to create depth stencil buffer");
+        return false;
+    }
+
+    if (!createRasterizerState())
+    {
+        log_error("Failed to create rasterizer state");
+        return false;
+    }
+
+    if (!createBlendState())
+    {
+        log_error("Failed to create blend state");
+        return false;
+    }
+
+    setViewport();
+
+    // Make window transparent
+    makeWindowTransparent(hwnd);
+
+    // Show window
+    ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
+
+    // Initialize ImGui
+    if (!initializeImGui())
+    {
+        log_warning("Failed to initialize ImGui");
+    }
+
+    m_initialized = true;
+    log_debug("Overlay renderer initialized successfully");
     return true;
 }
 
@@ -96,6 +213,8 @@ void DX11Renderer::shutdown()
         return;
 
     log_debug("Shutting down DirectX 11 Renderer");
+
+    shutdownImGui();
 
     if (m_context)
     {
@@ -208,7 +327,7 @@ bool DX11Renderer::createSwapChain(HWND hwnd)
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = 2; // Double buffering
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD; // Use DISCARD for better compatibility
-    swapChainDesc.Flags = 0;
+    swapChainDesc.Flags = 0; // Remove GDI_COMPATIBLE for better performance
 
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = {};
     fullscreenDesc.RefreshRate.Numerator = 60;
@@ -346,8 +465,8 @@ bool DX11Renderer::createBlendState()
     blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
     blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
@@ -393,15 +512,23 @@ void DX11Renderer::beginFrame(float r, float g, float b, float a)
     if (!m_initialized)
         return;
 
+    updateOverlayPosition();
+
     float clearColor[4] = { r, g, b, a };
     m_context->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
     m_context->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    
+    beginImGuiFrame();
 }
 
 void DX11Renderer::endFrame()
 {
     if (!m_initialized)
         return;
+
+    // End ImGui frame and render
+    endImGuiFrame();
+    renderImGui();
 
     UINT syncInterval = m_vsyncEnabled ? 1 : 0;
     HRESULT hr = m_swapChain->Present(syncInterval, 0);
@@ -498,6 +625,185 @@ HWND DX11Renderer::createWindow(const char* title, int width, int height)
     return hwnd;
 }
 
+HWND DX11Renderer::createOverlayWindow()
+{
+    const char* className = "DX11OverlayWindow";
+    HINSTANCE hInstance = GetModuleHandle(nullptr);
+
+    WNDCLASSEXA wc = {};
+    wc.cbSize = sizeof(WNDCLASSEXA);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = windowProcStatic;
+    wc.hInstance = hInstance;
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)0; // No background
+    wc.lpszClassName = className;
+
+    if (!RegisterClassExA(&wc))
+    {
+        DWORD error = GetLastError();
+        if (error != ERROR_CLASS_ALREADY_EXISTS)
+        {
+            log_error("Failed to register overlay window class: %u", error);
+            return nullptr;
+        }
+    }
+
+    // Create overlay window with extended styles for transparency and click-through
+    HWND hwnd = CreateWindowExA(
+        WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+        className,
+        "Overlay",
+        WS_POPUP,
+        m_targetRect.left,
+        m_targetRect.top,
+        m_width,
+        m_height,
+        nullptr,
+        nullptr,
+        hInstance,
+        this
+    );
+
+    if (!hwnd)
+    {
+        log_error("Failed to create overlay window: %u", GetLastError());
+        return nullptr;
+    }
+
+    return hwnd;
+}
+
+void DX11Renderer::makeWindowTransparent(HWND hwnd)
+{
+    // Set window transparency
+    SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+    
+    // Extend frame into client area
+    DwmExtendFrameIntoClientArea(hwnd, &m_margins);
+    
+    // Set DWM blur behind
+    DWM_BLURBEHIND bb = { 0 };
+    bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
+    bb.fEnable = TRUE;
+    bb.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
+    DwmEnableBlurBehindWindow(hwnd, &bb);
+    DeleteObject(bb.hRgnBlur);
+}
+
+HWND DX11Renderer::findTargetWindow(const char* windowTitle, const char* windowClass)
+{
+    HWND hwnd = nullptr;
+    
+    if (windowClass)
+    {
+        hwnd = FindWindowA(windowClass, windowTitle);
+    }
+    else
+    {
+        hwnd = FindWindowA(nullptr, windowTitle);
+    }
+    
+    if (!hwnd && windowTitle)
+    {
+        // Try to find by partial title match
+        struct FindWindowData {
+            const char* title;
+            HWND result;
+        } data = { windowTitle, nullptr };
+        
+        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+            auto* data = reinterpret_cast<FindWindowData*>(lParam);
+            char title[256];
+            if (GetWindowTextA(hwnd, title, sizeof(title)) && strstr(title, data->title))
+            {
+                data->result = hwnd;
+                return FALSE; // Stop enumeration
+            }
+            return TRUE; // Continue enumeration
+        }, reinterpret_cast<LPARAM>(&data));
+        
+        hwnd = data.result;
+    }
+    
+    return hwnd;
+}
+
+void DX11Renderer::updateOverlayPosition()
+{
+    if (!m_targetHwnd || !m_hwnd)
+        return;
+    
+    // Check if target window still exists
+    if (!IsWindow(m_targetHwnd))
+    {
+        log_warning("Target window no longer exists");
+        m_shouldClose = true;
+        return;
+    }
+    
+    // Get current target window rect
+    RECT newRect;
+    if (GetWindowRect(m_targetHwnd, &newRect))
+    {
+        // Check if position or size changed
+        if (memcmp(&newRect, &m_targetRect, sizeof(RECT)) != 0)
+        {
+            m_targetRect = newRect;
+            int width = newRect.right - newRect.left;
+            int height = newRect.bottom - newRect.top;
+            
+            // Update overlay window position and size
+            SetWindowPos(m_hwnd, HWND_TOPMOST, 
+                newRect.left, newRect.top, width, height,
+                SWP_NOACTIVATE);
+            
+            // Resize if dimensions changed
+            if (width != m_width || height != m_height)
+            {
+                onResize(width, height);
+            }
+        }
+    }
+    
+    // Ensure overlay stays on top
+    SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0, 
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+void DX11Renderer::setOverlayInteractive(bool interactive)
+{
+    if (!m_hwnd)
+        return;
+
+    LONG exStyle = GetWindowLong(m_hwnd, GWL_EXSTYLE);
+    
+    if (interactive)
+    {
+        // Remove transparent flag to make window interactive
+        exStyle &= ~WS_EX_TRANSPARENT;
+        SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
+        
+        // Make sure the window can receive focus
+        SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+            
+        log_debug("Overlay set to interactive mode");
+    }
+    else
+    {
+        // Add transparent flag to make window click-through
+        exStyle |= WS_EX_TRANSPARENT;
+        SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
+        
+        // Update window to apply changes
+        SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+            
+        log_debug("Overlay set to click-through mode");
+    }
+}
+
 LRESULT CALLBACK DX11Renderer::windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     DX11Renderer* renderer = nullptr;
@@ -523,6 +829,13 @@ LRESULT CALLBACK DX11Renderer::windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wPa
 
 LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    // Handle ImGui input
+    if (m_imguiInitialized)
+    {
+        if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
+            return true;
+    }
+
     switch (uMsg)
     {
     case WM_DESTROY:
@@ -566,4 +879,77 @@ bool DX11Renderer::processMessages()
     }
 
     return !m_shouldClose;
+}
+
+bool DX11Renderer::initializeImGui()
+{
+    if (m_imguiInitialized)
+        return true;
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    
+    // Setup Platform/Renderer backends
+    if (!ImGui_ImplWin32_Init(m_hwnd))
+    {
+        log_error("Failed to initialize ImGui Win32 backend");
+        return false;
+    }
+    
+    if (!ImGui_ImplDX11_Init(m_device.Get(), m_context.Get()))
+    {
+        log_error("Failed to initialize ImGui DX11 backend");
+        ImGui_ImplWin32_Shutdown();
+        return false;
+    }
+
+    m_imguiInitialized = true;
+    log_debug("ImGui initialized successfully");
+    return true;
+}
+
+void DX11Renderer::shutdownImGui()
+{
+    if (!m_imguiInitialized)
+        return;
+
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+    
+    m_imguiInitialized = false;
+    log_debug("ImGui shut down");
+}
+
+void DX11Renderer::beginImGuiFrame()
+{
+    if (!m_imguiInitialized)
+        return;
+
+    // Start the Dear ImGui frame
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+}
+
+void DX11Renderer::endImGuiFrame()
+{
+    if (!m_imguiInitialized)
+        return;
+
+    ImGui::Render();
+}
+
+void DX11Renderer::renderImGui()
+{
+    if (!m_imguiInitialized)
+        return;
+
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
