@@ -24,7 +24,4 @@ jobs:
       with:
         name: build-artifacts
         path: |
-          build/Release/*.exe
-          build/Release/*.dll
-          x64/Release/*.exe
-          x64/Release/*.dll
+          build/*.exe
