@@ -71,9 +71,9 @@ private:
     static constexpr const char* BRIGHT_WHITE = "\033[97m";
 };
 
-#define LOG_DEBUG(...) Logger::instance().debug(__VA_ARGS__)
-#define LOG_INFO(...) Logger::instance().info(__VA_ARGS__)
-#define LOG_WARNING(...) Logger::instance().warning(__VA_ARGS__)
-#define LOG_ERROR(...) Logger::instance().error(__VA_ARGS__)
-#define LOG_CRITICAL(...) Logger::instance().critical(__VA_ARGS__)
+#define log_debug(...) Logger::instance().debug(__VA_ARGS__)
+#define log_info(...) Logger::instance().info(__VA_ARGS__)
+#define log_warning(...) Logger::instance().warning(__VA_ARGS__)
+#define log_error(...) Logger::instance().error(__VA_ARGS__)
+#define log_critical(...) Logger::instance().critical(__VA_ARGS__)
 

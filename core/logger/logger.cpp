@@ -1,8 +1,7 @@
-#include <core/logger.hpp>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
+#include "logger.hpp"
+
 #include <windows.h>
+#include <iostream>
 
 Logger::~Logger() {
     if (m_file) {

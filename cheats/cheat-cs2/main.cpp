@@ -4,16 +4,16 @@
 
 int main() {
 	Core core;
-	core.with_name("AssaultCube")
-		.with_access_adapter(AccessAdapter::Local)
-		.with_render_backend(RenderBackend::DX11)
+	core.with_access_adapter(AccessAdapter::Local)
 		.with_logger_backend(LoggerBackend::Console)
 		.with_logger_level(LogLevel::Debug);
 
 	if (!core.initialize()) {
-		fprintf(stderr, "Failed to initialize core\n");
+		log_critical("Failed to initialize core");
 		return 1;
 	}
+
+	log_info("Counter-Strike 2 cheat initialized");
 
 	while (core.update()) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));

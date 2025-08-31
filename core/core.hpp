@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <core/logger.hpp>
+#include <core/logger/logger.hpp>
 
 enum class AccessAdapter {
 	Local,
@@ -20,14 +20,6 @@ public:
 		m_access_adapter = adapter;
 		return *this;	
 	}
-	Core& with_render_backend(RenderBackend backend) {
-		m_render_backend = backend;
-		return *this;
-	}
-	Core& with_name(const std::string& name) {
-		m_cheat_name = name;
-		return *this;
-	}
 	Core& with_logger_backend(LoggerBackend backend) {
 		m_logger_backend = backend;
 		return *this;
@@ -42,8 +34,6 @@ public:
 
 private:
 	AccessAdapter m_access_adapter = AccessAdapter::Local;
-	RenderBackend m_render_backend = RenderBackend::DX11;
 	LoggerBackend m_logger_backend = LoggerBackend::Console;
 	LogLevel m_logger_level = LogLevel::Debug;
-	std::string m_cheat_name;
 };	
