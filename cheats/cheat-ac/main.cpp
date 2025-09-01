@@ -10,7 +10,7 @@ void get_globals(AccessAdapter *access_adapter)
 
 void get_players(AccessAdapter *access_adapter)
 {
-	uintptr_t entity_list = access_adapter->read<uintptr_t>(client_state + 0x1379D8);
+	uintptr_t entity_list = access_adapter->read<uintptr_t>(0 + 0x1379D8);
 	uintptr_t num_players = access_adapter->read<uintptr_t>(entity_list + 0x1379E0);
 
 	for (int i = 0; i < num_players; i++)

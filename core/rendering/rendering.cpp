@@ -10,21 +10,10 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DX11Renderer::DX11Renderer()
-    : m_hwnd(nullptr)
-    , m_size(0, 0)
-    , m_borderlessFullscreen(false)
-    , m_vsyncEnabled(false)
-    , m_initialized(false)
-    , m_shouldClose(false)
-    , m_featureLevel(D3D_FEATURE_LEVEL_11_0)
-    , m_backBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM)
-    , m_msaaQuality(0)
-    , m_sampleCount(1)
-    , m_targetHwnd(nullptr)
-    , m_imguiInitialized(false)
+    : m_hwnd(nullptr), m_size(0, 0), m_borderlessFullscreen(false), m_vsyncEnabled(false), m_initialized(false), m_shouldClose(false), m_featureLevel(D3D_FEATURE_LEVEL_11_0), m_backBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM), m_msaaQuality(0), m_sampleCount(1), m_targetHwnd(nullptr), m_imguiInitialized(false)
 {
-    m_targetRect = { 0, 0, 0, 0 };
-    m_margins = { -1, -1, -1, -1 };
+    m_targetRect = {0, 0, 0, 0};
+    m_margins = {-1, -1, -1, -1};
 }
 
 DX11Renderer::~DX11Renderer()
@@ -32,7 +21,7 @@ DX11Renderer::~DX11Renderer()
     shutdown();
 }
 
-bool DX11Renderer::initialize(const char* windowTitle, bool borderlessFullscreen)
+bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen)
 {
     if (m_initialized)
     {
@@ -104,7 +93,7 @@ bool DX11Renderer::initialize(const char* windowTitle, bool borderlessFullscreen
     return true;
 }
 
-bool DX11Renderer::initializeOverlay(const char* targetWindowTitle, const char* targetWindowClass)
+bool DX11Renderer::initializeOverlay(const char *targetWindowTitle, const char *targetWindowClass)
 {
     if (m_initialized)
     {
@@ -230,12 +219,12 @@ bool DX11Renderer::createDevice()
 #endif
 
     D3D_FEATURE_LEVEL featureLevels[] =
-    {
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0,
-        D3D_FEATURE_LEVEL_10_1,
-        D3D_FEATURE_LEVEL_10_0,
-    };
+        {
+            D3D_FEATURE_LEVEL_11_1,
+            D3D_FEATURE_LEVEL_11_0,
+            D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
+        };
 
     HRESULT hr = D3D11CreateDevice(
         nullptr,
@@ -247,8 +236,7 @@ bool DX11Renderer::createDevice()
         D3D11_SDK_VERSION,
         &m_device,
         &m_featureLevel,
-        &m_context
-    );
+        &m_context);
 
     if (FAILED(hr))
     {
@@ -319,8 +307,7 @@ bool DX11Renderer::createSwapChain(HWND hwnd)
         &swapChainDesc,
         &fullscreenDesc,
         nullptr,
-        &m_swapChain
-    );
+        &m_swapChain);
 
     if (FAILED(hr))
     {
@@ -454,7 +441,7 @@ bool DX11Renderer::createBlendState()
         return false;
     }
 
-    float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    float blendFactor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     m_context->OMSetBlendState(m_blendState.Get(), blendFactor, 0xffffffff);
 
     log_debug("Blend state created successfully");
@@ -491,10 +478,10 @@ void DX11Renderer::beginFrame(float r, float g, float b, float a)
 
     updateOverlayPosition();
 
-    float clearColor[4] = { r, g, b, a };
+    float clearColor[4] = {r, g, b, a};
     m_context->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
     m_context->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-    
+
     beginImGuiFrame();
 }
 
@@ -549,9 +536,9 @@ void DX11Renderer::onResize(Vector2<LONG> size)
     setViewport();
 }
 
-HWND DX11Renderer::createWindow(const char* title, Vector2<LONG> size)
+HWND DX11Renderer::createWindow(const char *title, Vector2<LONG> size)
 {
-    const char* className = "DX11RendererWindow";
+    const char *className = "DX11RendererWindow";
     HINSTANCE hInstance = GetModuleHandle(nullptr);
 
     WNDCLASSEXA wc = {};
@@ -577,7 +564,7 @@ HWND DX11Renderer::createWindow(const char* title, Vector2<LONG> size)
     DWORD exStyle = 0;
     Vector2<LONG> windowSize;
     Vector2<LONG> windowPosition;
-    
+
     if (m_borderlessFullscreen)
     {
         windowStyle = WS_POPUP;
@@ -587,7 +574,7 @@ HWND DX11Renderer::createWindow(const char* title, Vector2<LONG> size)
     else
     {
         windowStyle = WS_OVERLAPPEDWINDOW;
-        RECT rect = { 0, 0, size.x, size.y };
+        RECT rect = {0, 0, size.x, size.y};
         AdjustWindowRect(&rect, windowStyle, FALSE);
         windowPosition = Vector2<LONG>(CW_USEDEFAULT, CW_USEDEFAULT);
         windowSize = Vector2<LONG>(rect.right - rect.left, rect.bottom - rect.top);
@@ -599,13 +586,12 @@ HWND DX11Renderer::createWindow(const char* title, Vector2<LONG> size)
         title,
         windowStyle,
         windowPosition.x, windowPosition.y,
-            windowSize.x,
+        windowSize.x,
         windowSize.y,
         nullptr,
         nullptr,
         hInstance,
-        this
-    );
+        this);
 
     if (!hwnd)
     {
@@ -618,7 +604,7 @@ HWND DX11Renderer::createWindow(const char* title, Vector2<LONG> size)
 
 HWND DX11Renderer::createOverlayWindow()
 {
-    const char* className = "DX11OverlayWindow";
+    const char *className = "DX11OverlayWindow";
     HINSTANCE hInstance = GetModuleHandle(nullptr);
 
     WNDCLASSEXA wc = {};
@@ -652,8 +638,7 @@ HWND DX11Renderer::createOverlayWindow()
         nullptr,
         nullptr,
         hInstance,
-        this
-    );
+        this);
 
     if (!hwnd)
     {
@@ -668,8 +653,8 @@ void DX11Renderer::makeWindowTransparent(HWND hwnd) const
 {
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
     DwmExtendFrameIntoClientArea(hwnd, &m_margins);
-    
-    DWM_BLURBEHIND bb = { 0 };
+
+    DWM_BLURBEHIND bb = {0};
     bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
     bb.fEnable = TRUE;
     bb.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
@@ -677,10 +662,10 @@ void DX11Renderer::makeWindowTransparent(HWND hwnd) const
     DeleteObject(bb.hRgnBlur);
 }
 
-HWND DX11Renderer::findTargetWindow(const char* windowTitle, const char* windowClass)
+HWND DX11Renderer::findTargetWindow(const char *windowTitle, const char *windowClass)
 {
     HWND hwnd = nullptr;
-    
+
     if (windowClass)
     {
         hwnd = FindWindowA(windowClass, windowTitle);
@@ -689,15 +674,17 @@ HWND DX11Renderer::findTargetWindow(const char* windowTitle, const char* windowC
     {
         hwnd = FindWindowA(nullptr, windowTitle);
     }
-    
+
     if (!hwnd && windowTitle)
     {
-        struct FindWindowData {
-            const char* title;
+        struct FindWindowData
+        {
+            const char *title;
             HWND result;
-        } data = { windowTitle, nullptr };
-        
-        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        } data = {windowTitle, nullptr};
+
+        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL
+                    {
             auto* data = reinterpret_cast<FindWindowData*>(lParam);
             char title[256];
             if (GetWindowTextA(hwnd, title, sizeof(title)) && strstr(title, data->title))
@@ -705,12 +692,11 @@ HWND DX11Renderer::findTargetWindow(const char* windowTitle, const char* windowC
                 data->result = hwnd;
                 return FALSE;
             }
-            return TRUE;
-        }, reinterpret_cast<LPARAM>(&data));
-        
+            return TRUE; }, reinterpret_cast<LPARAM>(&data));
+
         hwnd = data.result;
     }
-    
+
     return hwnd;
 }
 
@@ -718,14 +704,14 @@ void DX11Renderer::updateOverlayPosition()
 {
     if (!m_targetHwnd || !m_hwnd)
         return;
-    
+
     if (!IsWindow(m_targetHwnd))
     {
         log_warning("Target window no longer exists");
         m_shouldClose = true;
         return;
     }
-    
+
     RECT newRect;
     if (GetWindowRect(m_targetHwnd, &newRect))
     {
@@ -734,20 +720,20 @@ void DX11Renderer::updateOverlayPosition()
             m_targetRect = newRect;
             int width = newRect.right - newRect.left;
             int height = newRect.bottom - newRect.top;
-            
-            SetWindowPos(m_hwnd, HWND_TOPMOST, 
-                newRect.left, newRect.top, width, height,
-                SWP_NOACTIVATE);
-            
+
+            SetWindowPos(m_hwnd, HWND_TOPMOST,
+                         newRect.left, newRect.top, width, height,
+                         SWP_NOACTIVATE);
+
             if (width != m_size.x || height != m_size.y)
             {
                 onResize(Vector2<LONG>(width, height));
             }
         }
     }
-    
-    SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0, 
-        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+    SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
 void DX11Renderer::setOverlayInteractive(bool interactive) const
@@ -756,42 +742,42 @@ void DX11Renderer::setOverlayInteractive(bool interactive) const
         return;
 
     LONG exStyle = GetWindowLong(m_hwnd, GWL_EXSTYLE);
-    
+
     if (interactive)
     {
         exStyle &= ~WS_EX_TRANSPARENT;
         SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
-        
+
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
-            
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+
         log_debug("Overlay set to interactive mode");
     }
     else
     {
         exStyle |= WS_EX_TRANSPARENT;
         SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
-        
+
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-            
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
         log_debug("Overlay set to click-through mode");
     }
 }
 
 LRESULT CALLBACK DX11Renderer::windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    DX11Renderer* renderer = nullptr;
+    DX11Renderer *renderer = nullptr;
 
     if (uMsg == WM_CREATE)
     {
-        CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-        renderer = reinterpret_cast<DX11Renderer*>(pCreate->lpCreateParams);
+        CREATESTRUCT *pCreate = reinterpret_cast<CREATESTRUCT *>(lParam);
+        renderer = reinterpret_cast<DX11Renderer *>(pCreate->lpCreateParams);
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(renderer));
     }
     else
     {
-        renderer = reinterpret_cast<DX11Renderer*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        renderer = reinterpret_cast<DX11Renderer *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     }
 
     if (renderer)
@@ -862,19 +848,19 @@ bool DX11Renderer::initializeImGui()
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
-    
+
     ImGui::StyleColorsDark();
-    
+
     if (!ImGui_ImplWin32_Init(m_hwnd))
     {
         log_error("Failed to initialize ImGui Win32 backend");
         return false;
     }
-    
+
     if (!ImGui_ImplDX11_Init(m_device.Get(), m_context.Get()))
     {
         log_error("Failed to initialize ImGui DX11 backend");
@@ -895,7 +881,7 @@ void DX11Renderer::shutdownImGui()
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
-    
+
     m_imguiInitialized = false;
     log_debug("ImGui shut down");
 }
@@ -930,19 +916,19 @@ void DX11Renderer::setBorderlessFullscreen(bool enabled)
 {
     if (m_borderlessFullscreen == enabled || !m_hwnd)
         return;
-        
+
     m_borderlessFullscreen = enabled;
-    
+
     if (enabled)
     {
         SetWindowLong(m_hwnd, GWL_STYLE, WS_POPUP);
-        
+
         int screenWidth = GetSystemMetrics(SM_CXSCREEN);
         int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-        
-        SetWindowPos(m_hwnd, HWND_TOP, 0, 0, screenWidth, screenHeight, 
+
+        SetWindowPos(m_hwnd, HWND_TOP, 0, 0, screenWidth, screenHeight,
                      SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-                     
+
         if (screenWidth != m_size.x || screenHeight != m_size.y)
         {
             onResize(Vector2<LONG>(screenWidth, screenHeight));
@@ -951,27 +937,27 @@ void DX11Renderer::setBorderlessFullscreen(bool enabled)
     else
     {
         SetWindowLong(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-        
+
         int windowWidth = 1280;
         int windowHeight = 720;
         int screenWidth = GetSystemMetrics(SM_CXSCREEN);
         int screenHeight = GetSystemMetrics(SM_CYSCREEN);
         int x = (screenWidth - windowWidth) / 2;
         int y = (screenHeight - windowHeight) / 2;
-        
-        RECT rect = { 0, 0, windowWidth, windowHeight };
+
+        RECT rect = {0, 0, windowWidth, windowHeight};
         AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
         windowWidth = rect.right - rect.left;
         windowHeight = rect.bottom - rect.top;
-        
-        SetWindowPos(m_hwnd, HWND_TOP, x, y, windowWidth, windowHeight, 
+
+        SetWindowPos(m_hwnd, HWND_TOP, x, y, windowWidth, windowHeight,
                      SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-                     
+
         if (1280 != m_size.x || 720 != m_size.y)
         {
             onResize(Vector2<LONG>(1280, 720));
         }
     }
-    
+
     log_info("Switched to %s mode", enabled ? "borderless fullscreen" : "windowed");
 }

@@ -3,26 +3,27 @@
 #include <windows.h>
 #include <tlhelp32.h>
 
-class WinApiAccessAdapter : public AccessAdapter {
+class WinApiAccessAdapter : public AccessAdapter
+{
 public:
-    WinApiAccessAdapter() : 
-        m_processHandle(NULL),
-        m_processId(0)
+    WinApiAccessAdapter() : m_processHandle(NULL),
+                            m_processId(0)
     {
     }
-    ~WinApiAccessAdapter() {
+    ~WinApiAccessAdapter()
+    {
         detach();
     }
 
-    bool attach(const std::string& processName) override;
+    bool attach(const std::string &processName) override;
     bool detach() override;
 
-    bool getModules(std::vector<ProcessModule>& modules) override;
+    bool getModules(std::vector<ProcessModule> &modules) override;
 
-    bool read(uintptr_t address, void* buffer, size_t size) override;
-    bool write(uintptr_t address, const void* buffer, size_t size) override;
+    bool read(uintptr_t address, void *buffer, size_t size) override;
+    bool write(uintptr_t address, const void *buffer, size_t size) override;
 
-    bool setMousePosition(const Vector2<int>& position) override;
+    bool setMousePosition(const Vector2<int> &position) override;
     bool setLeftMouseButton(bool state) override;
     bool getKeyState(int key) override;
 
