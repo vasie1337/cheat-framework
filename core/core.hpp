@@ -2,6 +2,9 @@
 
 #include <string>
 #include <memory>
+#include <functional>
+#include <vector>
+
 #include <core/logger/logger.hpp>
 #include <core/rendering/rendering.hpp>
 #include <core/access/adapter.hpp>
@@ -40,7 +43,7 @@ public:
 		m_window_title = title;
 		return *this;
 	}
-	Core &with_target(const char *title, const char *className = nullptr, const char *processName = nullptr)
+	Core &with_target(const char *title, const char *className, const char *processName)
 	{
 		m_target_window_title = title;
 		m_target_window_class = className;
@@ -48,15 +51,22 @@ public:
 		return *this;
 	}
 
+	void register_callback(std::function<void(Core*)> callback)
+	{
+		m_callbacks.emplace_back(callback);
+	}
+
 	bool update();
+
+	std::unique_ptr<AccessAdapter> m_access_adapter;
+	std::unique_ptr<DX11Renderer> m_renderer;
 
 private:
 	TargetKind m_target_type = TargetKind::Local;
 	LoggerBackend m_logger_backend_kind = LoggerBackend::Console;
 	LogLevel m_logger_level_kind = LogLevel::Debug;
 
-	std::unique_ptr<DX11Renderer> m_renderer;
-	std::unique_ptr<AccessAdapter> m_access_adapter;
+	std::vector<std::function<void(Core*)>> m_callbacks;
 
 	const char *m_window_title = nullptr;
 	const char *m_target_window_title = nullptr;

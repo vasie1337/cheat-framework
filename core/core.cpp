@@ -70,21 +70,21 @@ bool Core::update()
 
 	m_renderer->beginFrame(0.0f, 0.0f, 0.0f, 0.0f);
 
-	float fps = ImGui::GetIO().Framerate;
-	std::string fps_string = "FPS: " + std::to_string(fps);
-	ImGui::GetBackgroundDrawList()->AddText(ImVec2(50, 50), ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), fps_string.c_str());
-
-	if (!m_show_widgets)
+	for (auto& callback : m_callbacks)
 	{
-		m_renderer->endFrame();
-		return true;
+		callback(this);
 	}
 
-	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
+	if (m_show_widgets)
+	{
+		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
+		ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
+		{
 
-	ImGui::End();
+		}
+		ImGui::End();
+	}
 
 	m_renderer->endFrame();
 
