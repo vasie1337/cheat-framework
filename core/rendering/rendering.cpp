@@ -3,19 +3,17 @@
 #include <stdexcept>
 #include <cstring>
 
-// ImGui includes - assuming these will be provided
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx11.h>
 
-// Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DX11Renderer::DX11Renderer()
     : m_hwnd(nullptr)
     , m_width(0)
     , m_height(0)
-    , m_fullscreen(false)
+    , m_borderlessFullscreen(false)
     , m_vsyncEnabled(false)
     , m_initialized(false)
     , m_shouldClose(false)
@@ -25,8 +23,6 @@ DX11Renderer::DX11Renderer()
     , m_sampleCount(1)
     , m_targetHwnd(nullptr)
     , m_imguiInitialized(false)
-    , m_vertexBufferSize(5000)
-    , m_indexBufferSize(10000)
 {
     m_targetRect = { 0, 0, 0, 0 };
     m_margins = { -1, -1, -1, -1 };
@@ -37,7 +33,7 @@ DX11Renderer::~DX11Renderer()
     shutdown();
 }
 
-bool DX11Renderer::initialize(const char* windowTitle, int width, int height, bool fullscreen)
+bool DX11Renderer::initialize(const char* windowTitle, bool borderlessFullscreen)
 {
     if (m_initialized)
     {
@@ -45,7 +41,12 @@ bool DX11Renderer::initialize(const char* windowTitle, int width, int height, bo
         return true;
     }
 
-    HWND hwnd = createWindow(windowTitle, width, height);
+    m_borderlessFullscreen = borderlessFullscreen;
+
+    int screen_width = GetSystemMetrics(SM_CXSCREEN);
+    int screen_height = GetSystemMetrics(SM_CYSCREEN);
+
+    HWND hwnd = createWindow(windowTitle, screen_width, screen_height);
     if (!hwnd)
     {
         log_error("Failed to create window");
@@ -56,11 +57,10 @@ bool DX11Renderer::initialize(const char* windowTitle, int width, int height, bo
     UpdateWindow(hwnd);
 
     m_hwnd = hwnd;
-    m_width = width;
-    m_height = height;
-    m_fullscreen = fullscreen;
+    m_width = screen_width;
+    m_height = screen_height;
 
-    log_debug("Initializing DirectX 11 Renderer (%ix%i, fullscreen: %i)", width, height, fullscreen);
+    log_debug("Initializing DirectX 11 Renderer (%ix%i)", screen_width, screen_height);
 
     if (!createDevice())
     {
@@ -100,7 +100,6 @@ bool DX11Renderer::initialize(const char* windowTitle, int width, int height, bo
 
     setViewport();
 
-    // Initialize ImGui
     if (!initializeImGui())
     {
         log_warning("Failed to initialize ImGui");
@@ -119,7 +118,6 @@ bool DX11Renderer::initializeOverlay(const char* targetWindowTitle, const char* 
         return true;
     }
 
-    // Find target window
     m_targetHwnd = findTargetWindow(targetWindowTitle, targetWindowClass);
     if (!m_targetHwnd)
     {
@@ -127,7 +125,6 @@ bool DX11Renderer::initializeOverlay(const char* targetWindowTitle, const char* 
         return false;
     }
 
-    // Get target window dimensions
     if (!GetWindowRect(m_targetHwnd, &m_targetRect))
     {
         log_error("Failed to get target window rect");
@@ -139,25 +136,20 @@ bool DX11Renderer::initializeOverlay(const char* targetWindowTitle, const char* 
 
     log_debug("Creating overlay window (%ix%i)", m_width, m_height);
 
-    // Create overlay window
-    HWND hwnd = createOverlayWindow();
-    if (!hwnd)
+    m_hwnd = createOverlayWindow();
+    if (!m_hwnd)
     {
         log_error("Failed to create overlay window");
         return false;
     }
 
-    m_hwnd = hwnd;
-    m_fullscreen = false;
-
-    // Initialize D3D11
     if (!createDevice())
     {
         log_error("Failed to create D3D11 device");
         return false;
     }
 
-    if (!createSwapChain(hwnd))
+    if (!createSwapChain(m_hwnd))
     {
         log_error("Failed to create swap chain");
         return false;
@@ -188,15 +180,11 @@ bool DX11Renderer::initializeOverlay(const char* targetWindowTitle, const char* 
     }
 
     setViewport();
+    makeWindowTransparent(m_hwnd);
 
-    // Make window transparent
-    makeWindowTransparent(hwnd);
+    ShowWindow(m_hwnd, SW_SHOW);
+    UpdateWindow(m_hwnd);
 
-    // Show window
-    ShowWindow(hwnd, SW_SHOW);
-    UpdateWindow(hwnd);
-
-    // Initialize ImGui
     if (!initializeImGui())
     {
         log_warning("Failed to initialize ImGui");
@@ -257,9 +245,9 @@ bool DX11Renderer::createDevice()
     };
 
     HRESULT hr = D3D11CreateDevice(
-        nullptr,                    // Use default adapter
-        D3D_DRIVER_TYPE_HARDWARE,   // Use hardware device
-        nullptr,                    // No software device
+        nullptr,
+        D3D_DRIVER_TYPE_HARDWARE,
+        nullptr,
         createDeviceFlags,
         featureLevels,
         ARRAYSIZE(featureLevels),
@@ -275,7 +263,6 @@ bool DX11Renderer::createDevice()
         return false;
     }
 
-    // Get DXGI factory
     ComPtr<IDXGIDevice> dxgiDevice;
     hr = m_device.As(&dxgiDevice);
     if (FAILED(hr))
@@ -299,7 +286,6 @@ bool DX11Renderer::createDevice()
         return false;
     }
 
-    // Check MSAA support
     hr = m_device->CheckMultisampleQualityLevels(m_backBufferFormat, 4, &m_msaaQuality);
     if (SUCCEEDED(hr) && m_msaaQuality > 0)
     {
@@ -325,14 +311,14 @@ bool DX11Renderer::createSwapChain(HWND hwnd)
     swapChainDesc.SampleDesc.Count = m_sampleCount;
     swapChainDesc.SampleDesc.Quality = m_sampleCount > 1 ? m_msaaQuality - 1 : 0;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.BufferCount = 2; // Double buffering
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD; // Use DISCARD for better compatibility
-    swapChainDesc.Flags = 0; // Remove GDI_COMPATIBLE for better performance
+    swapChainDesc.BufferCount = 2;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    swapChainDesc.Flags = 0;
 
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = {};
     fullscreenDesc.RefreshRate.Numerator = 60;
     fullscreenDesc.RefreshRate.Denominator = 1;
-    fullscreenDesc.Windowed = !m_fullscreen;
+    fullscreenDesc.Windowed = TRUE;
 
     HRESULT hr = m_dxgiFactory->CreateSwapChainForHwnd(
         m_device.Get(),
@@ -349,7 +335,6 @@ bool DX11Renderer::createSwapChain(HWND hwnd)
         return false;
     }
 
-    // Disable Alt+Enter fullscreen toggle
     m_dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
 
     log_debug("Swap chain created successfully");
@@ -411,7 +396,6 @@ bool DX11Renderer::createDepthStencilBuffer()
         return false;
     }
 
-    // Create depth stencil state
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
     depthStencilDesc.DepthEnable = TRUE;
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -597,18 +581,37 @@ HWND DX11Renderer::createWindow(const char* title, int width, int height)
         }
     }
 
-    RECT rect = { 0, 0, width, height };
-    AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+    DWORD windowStyle;
+    DWORD exStyle = 0;
+    int x, y, windowWidth, windowHeight;
+    
+    if (m_borderlessFullscreen)
+    {
+        windowStyle = WS_POPUP;
+        x = 0;
+        y = 0;
+        windowWidth = width;
+        windowHeight = height;
+    }
+    else
+    {
+        windowStyle = WS_OVERLAPPEDWINDOW;
+        RECT rect = { 0, 0, width, height };
+        AdjustWindowRect(&rect, windowStyle, FALSE);
+        x = CW_USEDEFAULT;
+        y = CW_USEDEFAULT;
+        windowWidth = rect.right - rect.left;
+        windowHeight = rect.bottom - rect.top;
+    }
 
-    // Create window
     HWND hwnd = CreateWindowExA(
-        0,
+        exStyle,
         className,
         title,
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        rect.right - rect.left,
-        rect.bottom - rect.top,
+        windowStyle,
+        x, y,
+        windowWidth,
+        windowHeight,
         nullptr,
         nullptr,
         hInstance,
@@ -635,7 +638,7 @@ HWND DX11Renderer::createOverlayWindow()
     wc.lpfnWndProc = windowProcStatic;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)0; // No background
+    wc.hbrBackground = (HBRUSH)0;
     wc.lpszClassName = className;
 
     if (!RegisterClassExA(&wc))
@@ -648,7 +651,6 @@ HWND DX11Renderer::createOverlayWindow()
         }
     }
 
-    // Create overlay window with extended styles for transparency and click-through
     HWND hwnd = CreateWindowExA(
         WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
         className,
@@ -675,13 +677,9 @@ HWND DX11Renderer::createOverlayWindow()
 
 void DX11Renderer::makeWindowTransparent(HWND hwnd)
 {
-    // Set window transparency
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
-    
-    // Extend frame into client area
     DwmExtendFrameIntoClientArea(hwnd, &m_margins);
     
-    // Set DWM blur behind
     DWM_BLURBEHIND bb = { 0 };
     bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
     bb.fEnable = TRUE;
@@ -705,7 +703,6 @@ HWND DX11Renderer::findTargetWindow(const char* windowTitle, const char* windowC
     
     if (!hwnd && windowTitle)
     {
-        // Try to find by partial title match
         struct FindWindowData {
             const char* title;
             HWND result;
@@ -717,9 +714,9 @@ HWND DX11Renderer::findTargetWindow(const char* windowTitle, const char* windowC
             if (GetWindowTextA(hwnd, title, sizeof(title)) && strstr(title, data->title))
             {
                 data->result = hwnd;
-                return FALSE; // Stop enumeration
+                return FALSE;
             }
-            return TRUE; // Continue enumeration
+            return TRUE;
         }, reinterpret_cast<LPARAM>(&data));
         
         hwnd = data.result;
@@ -733,7 +730,6 @@ void DX11Renderer::updateOverlayPosition()
     if (!m_targetHwnd || !m_hwnd)
         return;
     
-    // Check if target window still exists
     if (!IsWindow(m_targetHwnd))
     {
         log_warning("Target window no longer exists");
@@ -741,23 +737,19 @@ void DX11Renderer::updateOverlayPosition()
         return;
     }
     
-    // Get current target window rect
     RECT newRect;
     if (GetWindowRect(m_targetHwnd, &newRect))
     {
-        // Check if position or size changed
         if (memcmp(&newRect, &m_targetRect, sizeof(RECT)) != 0)
         {
             m_targetRect = newRect;
             int width = newRect.right - newRect.left;
             int height = newRect.bottom - newRect.top;
             
-            // Update overlay window position and size
             SetWindowPos(m_hwnd, HWND_TOPMOST, 
                 newRect.left, newRect.top, width, height,
                 SWP_NOACTIVATE);
             
-            // Resize if dimensions changed
             if (width != m_width || height != m_height)
             {
                 onResize(width, height);
@@ -765,7 +757,6 @@ void DX11Renderer::updateOverlayPosition()
         }
     }
     
-    // Ensure overlay stays on top
     SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0, 
         SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
@@ -779,11 +770,9 @@ void DX11Renderer::setOverlayInteractive(bool interactive)
     
     if (interactive)
     {
-        // Remove transparent flag to make window interactive
         exStyle &= ~WS_EX_TRANSPARENT;
         SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
         
-        // Make sure the window can receive focus
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
             
@@ -791,11 +780,9 @@ void DX11Renderer::setOverlayInteractive(bool interactive)
     }
     else
     {
-        // Add transparent flag to make window click-through
         exStyle |= WS_EX_TRANSPARENT;
         SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
         
-        // Update window to apply changes
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
             
@@ -828,7 +815,6 @@ LRESULT CALLBACK DX11Renderer::windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wPa
 
 LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    // Handle ImGui input
     if (m_imguiInitialized)
     {
         if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
@@ -885,7 +871,6 @@ bool DX11Renderer::initializeImGui()
     if (m_imguiInitialized)
         return true;
 
-    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -893,10 +878,8 @@ bool DX11Renderer::initializeImGui()
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
     
-    // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     
-    // Setup Platform/Renderer backends
     if (!ImGui_ImplWin32_Init(m_hwnd))
     {
         log_error("Failed to initialize ImGui Win32 backend");
@@ -933,7 +916,6 @@ void DX11Renderer::beginImGuiFrame()
     if (!m_imguiInitialized)
         return;
 
-    // Start the Dear ImGui frame
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -953,4 +935,54 @@ void DX11Renderer::renderImGui()
         return;
 
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+void DX11Renderer::setBorderlessFullscreen(bool enabled)
+{
+    if (m_borderlessFullscreen == enabled || !m_hwnd)
+        return;
+        
+    m_borderlessFullscreen = enabled;
+    
+    if (enabled)
+    {
+        SetWindowLong(m_hwnd, GWL_STYLE, WS_POPUP);
+        
+        int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+        int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+        
+        SetWindowPos(m_hwnd, HWND_TOP, 0, 0, screenWidth, screenHeight, 
+                     SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+                     
+        if (screenWidth != m_width || screenHeight != m_height)
+        {
+            onResize(screenWidth, screenHeight);
+        }
+    }
+    else
+    {
+        SetWindowLong(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+        
+        int windowWidth = 1280;
+        int windowHeight = 720;
+        int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+        int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+        int x = (screenWidth - windowWidth) / 2;
+        int y = (screenHeight - windowHeight) / 2;
+        
+        RECT rect = { 0, 0, windowWidth, windowHeight };
+        AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+        windowWidth = rect.right - rect.left;
+        windowHeight = rect.bottom - rect.top;
+        
+        SetWindowPos(m_hwnd, HWND_TOP, x, y, windowWidth, windowHeight, 
+                     SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+                     
+        if (1280 != m_width || 720 != m_height)
+        {
+            onResize(1280, 720);
+        }
+    }
+    
+    log_info("Switched to %s mode", enabled ? "borderless fullscreen" : "windowed");
 }

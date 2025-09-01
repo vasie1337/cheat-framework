@@ -25,7 +25,7 @@ public:
     DX11Renderer();
     ~DX11Renderer();
 
-    bool initialize(const char* windowTitle, int width, int height, bool fullscreen = false);
+    bool initialize(const char* windowTitle, bool borderlessFullscreen = true);
     bool initializeOverlay(const char* targetWindowTitle, const char* targetWindowClass = nullptr);
     
     void shutdown();
@@ -55,6 +55,9 @@ public:
     bool isInitialized() const { return m_initialized; }
     bool isVSyncEnabled() const { return m_vsyncEnabled; }
     void setVSync(bool enabled) { m_vsyncEnabled = enabled; }
+    
+    bool isBorderlessFullscreen() const { return m_borderlessFullscreen; }
+    void setBorderlessFullscreen(bool enabled);
     
     void updateOverlayPosition();
     void setOverlayInteractive(bool interactive);
@@ -94,9 +97,10 @@ private:
     HWND m_hwnd;
     int m_width;
     int m_height;
-    bool m_fullscreen;
+    bool m_borderlessFullscreen;
     bool m_vsyncEnabled;
     bool m_initialized;
+    bool m_imguiInitialized;
     bool m_shouldClose;
     
     D3D_FEATURE_LEVEL m_featureLevel;
@@ -108,19 +112,4 @@ private:
     RECT m_targetRect;
     MARGINS m_margins;
     
-    // ImGui resources
-    bool m_imguiInitialized;
-    ComPtr<ID3D11ShaderResourceView> m_fontTextureView;
-    ComPtr<ID3D11SamplerState> m_fontSampler;
-    ComPtr<ID3D11Buffer> m_vertexBuffer;
-    ComPtr<ID3D11Buffer> m_indexBuffer;
-    ComPtr<ID3D11Buffer> m_vertexConstantBuffer;
-    ComPtr<ID3D11InputLayout> m_inputLayout;
-    ComPtr<ID3D11VertexShader> m_vertexShader;
-    ComPtr<ID3D11PixelShader> m_pixelShader;
-    ComPtr<ID3D11BlendState> m_imguiBlendState;
-    ComPtr<ID3D11RasterizerState> m_imguiRasterizerState;
-    ComPtr<ID3D11DepthStencilState> m_imguiDepthStencilState;
-    int m_vertexBufferSize;
-    int m_indexBufferSize;
 };

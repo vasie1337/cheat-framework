@@ -20,6 +20,12 @@ bool Core::initialize() {
 		log_error("Failed to initialize overlay renderer");
 		return false;
 	}
+
+	//if (!m_renderer->initialize(m_window_title))
+	//{
+	//	log_error("Failed to initialize renderer");
+	//	return false;
+	//}
 	
 	return true;
 }
