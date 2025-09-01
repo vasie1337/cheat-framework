@@ -97,6 +97,12 @@ void Core::shutdown() {
 		m_renderer->shutdown();
 		m_renderer.reset();
 	}
+
+	if (m_access_adapter)
+	{
+		m_access_adapter->detach();
+		m_access_adapter.reset();
+	}
 	
 	log_info("Core shut down successfully");
 }
