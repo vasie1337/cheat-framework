@@ -15,7 +15,7 @@ public:
     }
 
     bool attach(const std::string &processName) override;
-    bool detach() override;
+    void detach() override;
 
     bool getModules(std::vector<ProcessModule> &modules) override;
 

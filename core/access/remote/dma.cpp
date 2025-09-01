@@ -5,9 +5,8 @@ bool DMAAccessAdapter::attach(const std::string &processName)
     return false;
 }
 
-bool DMAAccessAdapter::detach()
+void DMAAccessAdapter::detach()
 {
-    return false;
 }
 
 bool DMAAccessAdapter::getModules(std::vector<ProcessModule> &modules)

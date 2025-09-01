@@ -1,7 +1,10 @@
 #include "winapi.hpp"
 
+#include <core/logger/logger.hpp>
+
 bool WinApiAccessAdapter::attach(const std::string &processName)
 {
+    log_debug("Attaching WinApiAccessAdapter to %s", processName.c_str());
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE)
     {
@@ -38,19 +41,20 @@ bool WinApiAccessAdapter::attach(const std::string &processName)
     return true;
 }
 
-bool WinApiAccessAdapter::detach()
+void WinApiAccessAdapter::detach()
 {
+    log_debug("Detaching WinApiAccessAdapter");
     if (m_processHandle != NULL)
     {
         CloseHandle(m_processHandle);
         m_processHandle = NULL;
         m_processId = 0;
     }
-    return true;
 }
 
 bool WinApiAccessAdapter::getModules(std::vector<ProcessModule> &modules)
 {
+    log_debug("Getting modules for WinApiAccessAdapter");
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, m_processId);
     if (snapshot == INVALID_HANDLE_VALUE)
     {

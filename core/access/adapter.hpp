@@ -22,12 +22,12 @@ public:
 class AccessAdapter
 {
 public:
-	AccessAdapter() = default;
-	~AccessAdapter() = default;
+	AccessAdapter() {}
+	virtual ~AccessAdapter() = default;
 
 	// Process
 	virtual bool attach(const std::string &processName) = 0;
-	virtual bool detach() = 0;
+	virtual void detach() = 0;
 
 	// Modules
 	virtual bool getModules(std::vector<ProcessModule> &modules) = 0;
