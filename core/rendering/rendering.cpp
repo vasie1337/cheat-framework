@@ -21,7 +21,7 @@ DX11Renderer::~DX11Renderer()
     shutdown();
 }
 
-bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen)
+bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen, const char *targetWindowTitle, const char *targetWindowClass)
 {
     if (m_initialized)
     {
@@ -30,21 +30,54 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
     }
 
     m_borderlessFullscreen = borderlessFullscreen;
+    bool isOverlay = (targetWindowTitle != nullptr);
 
-    m_size = Vector2<LONG>(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
-
-    m_hwnd = createWindow(windowTitle, m_size);
-    if (!m_hwnd)
+    if (isOverlay)
     {
-        log_error("Failed to create window");
-        return false;
+        // Overlay mode - find target window and create overlay
+        m_targetHwnd = findTargetWindow(targetWindowTitle, targetWindowClass);
+        if (!m_targetHwnd)
+        {
+            log_error("Failed to find target window: %s", targetWindowTitle);
+            return false;
+        }
+
+        if (!GetWindowRect(m_targetHwnd, &m_targetRect))
+        {
+            log_error("Failed to get target window rect");
+            return false;
+        }
+
+        m_size = Vector2<LONG>(m_targetRect.right - m_targetRect.left, m_targetRect.bottom - m_targetRect.top);
+
+        log_debug("Creating overlay window (%ix%i)", m_size.x, m_size.y);
+
+        m_hwnd = createOverlayWindow();
+        if (!m_hwnd)
+        {
+            log_error("Failed to create overlay window");
+            return false;
+        }
+    }
+    else
+    {
+        // Regular window mode
+        m_size = Vector2<LONG>(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+
+        m_hwnd = createWindow(windowTitle, m_size);
+        if (!m_hwnd)
+        {
+            log_error("Failed to create window");
+            return false;
+        }
+
+        ShowWindow(m_hwnd, SW_SHOW);
+        UpdateWindow(m_hwnd);
+
+        log_debug("Initializing DirectX 11 Renderer (%ix%i)", m_size.x, m_size.y);
     }
 
-    ShowWindow(m_hwnd, SW_SHOW);
-    UpdateWindow(m_hwnd);
-
-    log_debug("Initializing DirectX 11 Renderer (%ix%i)", m_size.x, m_size.y);
-
+    // Common initialization for both modes
     if (!createDevice())
     {
         log_error("Failed to create D3D11 device");
@@ -83,89 +116,13 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
 
     setViewport();
 
-    if (!initializeImGui())
+    if (isOverlay)
     {
-        log_warning("Failed to initialize ImGui");
+        // Overlay-specific finalization
+        makeWindowTransparent(m_hwnd);
+        ShowWindow(m_hwnd, SW_SHOW);
+        UpdateWindow(m_hwnd);
     }
-
-    m_initialized = true;
-    log_debug("DirectX 11 Renderer initialized successfully");
-    return true;
-}
-
-bool DX11Renderer::initializeOverlay(const char *targetWindowTitle, const char *targetWindowClass)
-{
-    if (m_initialized)
-    {
-        log_warning("Renderer already initialized");
-        return true;
-    }
-
-    m_targetHwnd = findTargetWindow(targetWindowTitle, targetWindowClass);
-    if (!m_targetHwnd)
-    {
-        log_error("Failed to find target window: %s", targetWindowTitle);
-        return false;
-    }
-
-    if (!GetWindowRect(m_targetHwnd, &m_targetRect))
-    {
-        log_error("Failed to get target window rect");
-        return false;
-    }
-
-    m_size = Vector2<LONG>(m_targetRect.right - m_targetRect.left, m_targetRect.bottom - m_targetRect.top);
-
-    log_debug("Creating overlay window (%ix%i)", m_size.x, m_size.y);
-
-    m_hwnd = createOverlayWindow();
-    if (!m_hwnd)
-    {
-        log_error("Failed to create overlay window");
-        return false;
-    }
-
-    if (!createDevice())
-    {
-        log_error("Failed to create D3D11 device");
-        return false;
-    }
-
-    if (!createSwapChain(m_hwnd))
-    {
-        log_error("Failed to create swap chain");
-        return false;
-    }
-
-    if (!createRenderTargetView())
-    {
-        log_error("Failed to create render target view");
-        return false;
-    }
-
-    if (!createDepthStencilBuffer())
-    {
-        log_error("Failed to create depth stencil buffer");
-        return false;
-    }
-
-    if (!createRasterizerState())
-    {
-        log_error("Failed to create rasterizer state");
-        return false;
-    }
-
-    if (!createBlendState())
-    {
-        log_error("Failed to create blend state");
-        return false;
-    }
-
-    setViewport();
-    makeWindowTransparent(m_hwnd);
-
-    ShowWindow(m_hwnd, SW_SHOW);
-    UpdateWindow(m_hwnd);
 
     if (!initializeImGui())
     {
@@ -173,7 +130,7 @@ bool DX11Renderer::initializeOverlay(const char *targetWindowTitle, const char *
     }
 
     m_initialized = true;
-    log_debug("Overlay renderer initialized successfully");
+    log_debug("%s renderer initialized successfully", isOverlay ? "Overlay" : "DirectX 11");
     return true;
 }
 

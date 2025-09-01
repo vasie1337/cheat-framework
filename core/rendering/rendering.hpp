@@ -27,8 +27,7 @@ public:
     DX11Renderer();
     ~DX11Renderer();
 
-    bool initialize(const char *windowTitle, bool borderlessFullscreen = true);
-    bool initializeOverlay(const char *targetWindowTitle, const char *targetWindowClass = nullptr);
+    bool initialize(const char *windowTitle, bool borderlessFullscreen = true, const char *targetWindowTitle = nullptr, const char *targetWindowClass = nullptr);
 
     void shutdown();
 
