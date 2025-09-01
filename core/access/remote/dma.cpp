@@ -1,11 +1,5 @@
 #include "dma.hpp"
 
-DMAAccessAdapter::DMAAccessAdapter() {
-}
-
-DMAAccessAdapter::~DMAAccessAdapter() {
-}
-
 bool DMAAccessAdapter::attach(const std::string& processName) {
     return false;
 }

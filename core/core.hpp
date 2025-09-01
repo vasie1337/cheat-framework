@@ -22,9 +22,10 @@ public:
 	Core& with_logger_backend(LoggerBackend backend) { m_logger_backend_kind = backend; return *this; }
 	Core& with_logger_level(LogLevel level) { m_logger_level_kind = level; return *this; }
 	Core& with_window_title(const char* title) { m_window_title = title; return *this; }
-	Core& with_target_window(const char* title, const char* className = nullptr) { 
+	Core& with_target(const char* title, const char* className = nullptr, const char* processName = nullptr) { 
 		m_target_window_title = title; 
 		m_target_window_class = className; 
+		m_target_process_name = processName;
 		return *this; 
 	}
 
@@ -42,6 +43,7 @@ private:
 	const char* m_window_title = nullptr;
 	const char* m_target_window_title = nullptr;
 	const char* m_target_window_class = nullptr;
+	const char* m_target_process_name = nullptr;
 
 	bool m_show_widgets = false;
 };	

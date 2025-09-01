@@ -1,18 +1,12 @@
 #include "winapi.hpp"
 
-WinApiAccessAdapter::WinApiAccessAdapter() {
-}
-
-WinApiAccessAdapter::~WinApiAccessAdapter() {
-}
-
 bool WinApiAccessAdapter::attach(const std::string& processName) {
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
         return false;
     }
 
-    PROCESSENTRY32 pe32;
+    PROCESSENTRY32 pe32{};
     pe32.dwSize = sizeof(PROCESSENTRY32);
     if (Process32First(snapshot, &pe32)) {
         do {
@@ -38,9 +32,11 @@ bool WinApiAccessAdapter::attach(const std::string& processName) {
 }
 
 bool WinApiAccessAdapter::detach() {
-    CloseHandle(m_processHandle);
-    m_processHandle = NULL;
-    m_processId = 0;
+    if (m_processHandle != NULL) {
+        CloseHandle(m_processHandle);
+        m_processHandle = NULL;
+        m_processId = 0;
+    }
     return true;
 }
 
@@ -50,7 +46,7 @@ bool WinApiAccessAdapter::getModules(std::vector<ProcessModule>& modules) {
         return false;
     }
 
-    MODULEENTRY32 me32;
+    MODULEENTRY32 me32{};
     me32.dwSize = sizeof(MODULEENTRY32);
     if (Module32First(snapshot, &me32)) {
         do {

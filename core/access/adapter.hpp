@@ -5,7 +5,14 @@
 
 #include <core/types/vector.hpp>
 
-struct ProcessModule {
+class ProcessModule {
+public:
+	ProcessModule() : 
+		name(""),
+		baseAddress(0),
+		size(0)
+	{
+	}
 	std::string name;
 	uintptr_t baseAddress;
 	size_t size;
@@ -47,8 +54,8 @@ public:
 	}
 	
 	template <typename T>
-	T read(uintptr_t address) const {
-		T value;
+	T read(uintptr_t address) {
+		T value{};
 		read(address, &value, sizeof(T));
 		return value;
 	}

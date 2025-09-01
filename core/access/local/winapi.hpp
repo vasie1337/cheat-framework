@@ -5,8 +5,14 @@
 
 class WinApiAccessAdapter : public AccessAdapter {
 public:
-    WinApiAccessAdapter();
-    ~WinApiAccessAdapter();
+    WinApiAccessAdapter() : 
+        m_processHandle(NULL),
+        m_processId(0)
+    {
+    }
+    ~WinApiAccessAdapter() {
+        detach();
+    }
 
     bool attach(const std::string& processName) override;
     bool detach() override;

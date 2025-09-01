@@ -10,7 +10,7 @@ int main() {
 		.with_logger_backend(LoggerBackend::Console)
 		.with_logger_level(LogLevel::Debug)
 		.with_window_title("AssaultCube Cheat")
-		.with_target_window("AssaultCube")
+		.with_target("AssaultCube", nullptr, "ac_client.exe")
 		.initialize())
 	{
 		log_critical("Failed to initialize core");
@@ -18,6 +18,7 @@ int main() {
 	}
 
 	while (core.update()) {
+
 	}
 
 	core.shutdown();

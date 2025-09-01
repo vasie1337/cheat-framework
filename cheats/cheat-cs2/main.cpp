@@ -10,7 +10,7 @@ int main() {
 		.with_logger_backend(LoggerBackend::Console)
 		.with_logger_level(LogLevel::Debug)
 		.with_window_title("CS2 Cheat")
-		.with_target_window("Counter-Strike 2")
+		.with_target("Counter-Strike 2", nullptr, "cs2.exe")
 		.initialize())
 	{
 		log_critical("Failed to initialize core");

@@ -5,8 +5,12 @@
 
 class DMAAccessAdapter : public AccessAdapter {
 public:
-    DMAAccessAdapter();
-    ~DMAAccessAdapter();
+    DMAAccessAdapter()
+    {
+    }
+    ~DMAAccessAdapter() {
+        detach();
+    }
 
     bool attach(const std::string& processName) override;
     bool detach() override;

@@ -20,29 +20,29 @@ bool Core::initialize() {
 	switch (m_access_adapter_kind) {
 		case AccessAdapterKind::Local:
 			m_access_adapter = std::make_unique<WinApiAccessAdapter>();
-			if (!m_access_adapter->attach(m_target_window_title))
+			if (!m_access_adapter->attach(m_target_process_name))
 			{
-				log_error("Failed to attach access adapter");
+				log_error("Failed to attach local access adapter");
 				return false;
 			}
-
+			log_debug("Local access adapter attached to %s", m_target_process_name);
 			if (!m_renderer->initializeOverlay(m_target_window_title, m_target_window_class))
 			{
 				log_error("Failed to initialize overlay renderer");
 				return false;
 			}
-			
 			break;
 		case AccessAdapterKind::Remote:
+			m_access_adapter = std::make_unique<DMAAccessAdapter>();
+			if (!m_access_adapter->attach(m_target_process_name))
+			{
+				log_error("Failed to attach remote access adapter");
+				return false;
+			}
+			log_debug("Remote access adapter attached to %s", m_target_process_name);
 			if (!m_renderer->initialize(m_window_title))
 			{
 				log_error("Failed to initialize renderer");
-				return false;
-			}
-			m_access_adapter = std::make_unique<DMAAccessAdapter>();
-			if (!m_access_adapter->attach(m_target_window_title))
-			{
-				log_error("Failed to attach access adapter");
 				return false;
 			}
 			break;
@@ -71,14 +71,14 @@ bool Core::update() {
 
 	float fps = ImGui::GetIO().Framerate;
 	std::string fps_string = "FPS: " + std::to_string(fps);
-	ImGui::GetBackgroundDrawList()->AddText(ImVec2(10, 10), ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), fps_string.c_str());
+	ImGui::GetBackgroundDrawList()->AddText(ImVec2(50, 50), ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), fps_string.c_str());
 
 	if (!m_show_widgets) {
 		m_renderer->endFrame();
 		return true;
 	}
 	
-	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
 
