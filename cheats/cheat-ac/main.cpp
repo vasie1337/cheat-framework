@@ -4,13 +4,15 @@
 
 int main() {
 	Core core;
-	core.with_access_adapter(AccessAdapterKind::Local)
+	
+	if (!core
+		.with_access_adapter(AccessAdapterKind::Local)
 		.with_logger_backend(LoggerBackend::Console)
 		.with_logger_level(LogLevel::Debug)
 		.with_window_title("AssaultCube Cheat")
-		.with_target_window("AssaultCube");
-
-	if (!core.initialize()) {
+		.with_target_window("AssaultCube")
+		.initialize())
+	{
 		log_critical("Failed to initialize core");
 		return 1;
 	}
