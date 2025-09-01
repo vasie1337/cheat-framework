@@ -14,19 +14,23 @@ Core::~Core()
 
 bool Core::initialize() {
 	Logger::instance().initialize(m_logger_backend_kind, m_logger_level_kind, "core.log");
-		
-	if (!m_renderer->initializeOverlay(m_target_window_title, m_target_window_class))
-	{
-		log_error("Failed to initialize overlay renderer");
-		return false;
-	}
 
-	//if (!m_renderer->initialize(m_window_title))
-	//{
-	//	log_error("Failed to initialize renderer");
-	//	return false;
-	//}
-	
+	switch (m_access_adapter_kind) {
+		case AccessAdapterKind::Local:
+			if (!m_renderer->initializeOverlay(m_target_window_title, m_target_window_class))
+			{
+				log_error("Failed to initialize overlay renderer");
+				return false;
+			}
+			break;
+		case AccessAdapterKind::Remote:
+			if (!m_renderer->initialize(m_window_title))
+			{
+				log_error("Failed to initialize renderer");
+				return false;
+			}
+			break;
+	}
 	return true;
 }
 
