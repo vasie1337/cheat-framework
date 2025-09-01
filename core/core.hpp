@@ -8,6 +8,8 @@
 #include <core/logger/logger.hpp>
 #include <core/rendering/rendering.hpp>
 #include <core/access/adapter.hpp>
+#include <core/types/vector.hpp>
+#include <core/types/matrix.hpp>
 
 enum class TargetKind
 {
@@ -60,6 +62,9 @@ public:
 
 	std::unique_ptr<AccessAdapter> m_access_adapter;
 	std::unique_ptr<DX11Renderer> m_renderer;
+
+	// Cheat functions:
+	bool WorldToScreen(const Vector3<float>& VecOrigin, Vector2<float>& VecScreen, const Matrix<16>& Matrix) const;
 
 private:
 	TargetKind m_target_type = TargetKind::Local;

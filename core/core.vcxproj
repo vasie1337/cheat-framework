@@ -48,6 +48,7 @@
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />
     <ClInclude Include="rendering\rendering.hpp" />
+    <ClInclude Include="types\matrix.hpp" />
     <ClInclude Include="types\vector.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
