@@ -1,5 +1,6 @@
 #include <core/core.hpp>
 #include <imgui.h>
+#include <string>
 
 Core::Core()
 	: m_renderer(std::make_unique<DX11Renderer>())
@@ -42,6 +43,10 @@ bool Core::update() {
 
 	m_renderer->beginFrame(0.0f, 0.0f, 0.0f, 0.0f);
 
+	float fps = ImGui::GetIO().Framerate;
+	std::string fps_string = "FPS: " + std::to_string(fps);
+	ImGui::GetBackgroundDrawList()->AddText(ImVec2(10, 10), ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)), fps_string.c_str());
+
 	if (!m_show_widgets) {
 		m_renderer->endFrame();
 		return true;
@@ -50,27 +55,6 @@ bool Core::update() {
 	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
-
-	ImGui::Text("Target Window: %s", m_target_window_title ? m_target_window_title : "None");
-	ImGui::Separator();
-
-	if (ImGui::CollapsingHeader("ESP Settings"))
-	{
-		static bool enable_esp = true;
-		ImGui::Checkbox("Enable ESP", &enable_esp);
-
-		static float esp_color[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
-		ImGui::ColorEdit4("ESP Color", esp_color);
-	}
-
-	if (ImGui::CollapsingHeader("Aimbot Settings"))
-	{
-		static bool enable_aimbot = false;
-		ImGui::Checkbox("Enable Aimbot", &enable_aimbot);
-
-		static float fov = 5.0f;
-		ImGui::SliderFloat("FOV", &fov, 1.0f, 30.0f);
-	}
 
 	ImGui::End();
 

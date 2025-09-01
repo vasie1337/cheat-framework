@@ -16,7 +16,7 @@ DX11Renderer::DX11Renderer()
     , m_width(0)
     , m_height(0)
     , m_fullscreen(false)
-    , m_vsyncEnabled(true)
+    , m_vsyncEnabled(false)
     , m_initialized(false)
     , m_shouldClose(false)
     , m_featureLevel(D3D_FEATURE_LEVEL_11_0)
@@ -526,7 +526,6 @@ void DX11Renderer::endFrame()
     if (!m_initialized)
         return;
 
-    // End ImGui frame and render
     endImGuiFrame();
     renderImGui();
 
@@ -891,6 +890,8 @@ bool DX11Renderer::initializeImGui()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
     
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
