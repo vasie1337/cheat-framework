@@ -4,7 +4,12 @@
 
 void get_globals(AccessAdapter *access_adapter)
 {
-	uintptr_t base_address = access_adapter->getModule("ac_client.exe")->baseAddress;
+	auto module = access_adapter->getModule("ac_client.exe");
+	if (!module) {
+		log_error("Failed to get ac_client.exe module");
+		return;
+	}
+	uintptr_t base_address = module->baseAddress;
 	uintptr_t client_state = access_adapter->read<uintptr_t>(base_address + 0x13475C0);
 }
 
@@ -24,12 +29,13 @@ int main()
 {
 	std::unique_ptr<Core> core = std::make_unique<Core>();
 
-	if (!core->with_target_type(TargetKind::Local)
-			 ->with_target("AssaultCube", nullptr, "ac_client.exe")
-			 ->with_window_title("AssaultCube Cheat")
-			 ->with_logger_backend(LoggerBackend::Console)
-			 ->with_logger_level(LogLevel::Debug)
-			 ->initialize())
+	core->with_target_type(TargetKind::Local)
+		.with_logger_backend(LoggerBackend::Console)
+		.with_logger_level(LogLevel::Debug)
+		.with_target("AssaultCube", nullptr, "ac_client.exe")
+		.with_window_title("AssaultCube Cheat");
+
+	if (!core->initialize())
 	{
 		log_critical("Failed to initialize core");
 		return 1;
@@ -41,8 +47,6 @@ int main()
 	while (core->update())
 	{
 	}
-
-	core->shutdown();
 
 	return 0;
 }

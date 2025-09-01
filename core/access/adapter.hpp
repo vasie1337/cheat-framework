@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <core/types/vector.hpp>
 
@@ -41,18 +42,18 @@ public:
 	virtual bool getKeyState(int key) = 0;
 
 	// Implementation
-	ProcessModule *getModule(const std::string &moduleName)
+	std::unique_ptr<ProcessModule> getModule(const std::string &moduleName)
 	{
 		std::vector<ProcessModule> modules;
 		if (!getModules(modules))
 		{
 			return nullptr;
 		}
-		for (auto &module : modules)
+		for (const auto &module : modules)
 		{
 			if (module.name == moduleName)
 			{
-				return &module;
+				return std::make_unique<ProcessModule>(module);
 			}
 		}
 		return nullptr;

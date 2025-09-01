@@ -4,15 +4,6 @@
 #include <core/access/local/winapi.hpp>
 #include <core/access/remote/dma.hpp>
 
-Core::Core()
-{
-}
-
-Core::~Core()
-{
-	shutdown();
-}
-
 bool Core::initialize()
 {
 	Logger::instance().initialize(m_logger_backend_kind, m_logger_level_kind, "core.log");
@@ -73,7 +64,7 @@ bool Core::update()
 
 	if (GetAsyncKeyState(VK_END) & 1)
 	{
-		shutdown();
+		//shutdown();
 		return true;
 	}
 
@@ -98,23 +89,4 @@ bool Core::update()
 	m_renderer->endFrame();
 
 	return true;
-}
-
-void Core::shutdown()
-{
-	log_info("Shutting down Core...");
-
-	if (m_renderer)
-	{
-		m_renderer->shutdown();
-		m_renderer.reset();
-	}
-
-	if (m_access_adapter)
-	{
-		m_access_adapter->detach();
-		m_access_adapter.reset();
-	}
-
-	log_info("Core shut down successfully");
 }

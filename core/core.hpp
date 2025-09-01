@@ -15,41 +15,40 @@ enum class TargetKind
 class Core
 {
 public:
-	Core();
-	~Core();
+	Core() = default;
+	~Core() = default;
 
 	bool initialize();
 
-	std::unique_ptr<Core> with_target_type(TargetKind target_type)
+	Core& with_target_type(TargetKind target_type)
 	{
 		m_target_type = target_type;
-		return std::unique_ptr<Core>(this);
+		return *this;
 	}
-	std::unique_ptr<Core> with_logger_backend(LoggerBackend backend)
+	Core& with_logger_backend(LoggerBackend backend)
 	{
 		m_logger_backend_kind = backend;
-		return std::unique_ptr<Core>(this);
+		return *this;
 	}
-	std::unique_ptr<Core> with_logger_level(LogLevel level)
+	Core& with_logger_level(LogLevel level)
 	{
 		m_logger_level_kind = level;
-		return std::unique_ptr<Core>(this);
+		return *this;
 	}
-	std::unique_ptr<Core> with_window_title(const char *title)
+	Core& with_window_title(const char *title)
 	{
 		m_window_title = title;
-		return std::unique_ptr<Core>(this);
+		return *this;
 	}
-	std::unique_ptr<Core> with_target(const char *title, const char *className = nullptr, const char *processName = nullptr)
+	Core& with_target(const char *title, const char *className = nullptr, const char *processName = nullptr)
 	{
 		m_target_window_title = title;
 		m_target_window_class = className;
 		m_target_process_name = processName;
-		return std::unique_ptr<Core>(this);
+		return *this;
 	}
 
 	bool update();
-	void shutdown();
 
 private:
 	TargetKind m_target_type = TargetKind::Local;
@@ -65,4 +64,5 @@ private:
 	const char *m_target_process_name = nullptr;
 
 	bool m_show_widgets = false;
+	bool m_did_shutdown = false;
 };
