@@ -5,7 +5,8 @@
 void get_globals(AccessAdapter *access_adapter)
 {
 	auto module = access_adapter->getModule("ac_client.exe");
-	if (!module) {
+	if (!module)
+	{
 		log_error("Failed to get ac_client.exe module");
 		return;
 	}

@@ -9,7 +9,8 @@ bool Core::initialize()
 	Logger::instance().initialize(m_logger_backend_kind, m_logger_level_kind, "core.log");
 
 	m_renderer = std::make_unique<DX11Renderer>();
-	if (!m_renderer) {
+	if (!m_renderer)
+	{
 		log_critical("Failed to create renderer");
 		return false;
 	}
@@ -64,8 +65,7 @@ bool Core::update()
 
 	if (GetAsyncKeyState(VK_END) & 1)
 	{
-		//shutdown();
-		return true;
+		return false;
 	}
 
 	m_renderer->beginFrame(0.0f, 0.0f, 0.0f, 0.0f);
