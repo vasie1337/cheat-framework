@@ -4,6 +4,7 @@
 #include <memory>
 #include <core/logger/logger.hpp>
 #include <core/rendering/rendering.hpp>
+#include <core/access/adapter.hpp>
 
 enum class AccessAdapterKind {
 	Local,
@@ -36,6 +37,7 @@ private:
 	LogLevel m_logger_level_kind = LogLevel::Debug;
 	
 	std::unique_ptr<DX11Renderer> m_renderer;
+	std::unique_ptr<AccessAdapter> m_access_adapter;
 	
 	const char* m_window_title = nullptr;
 	const char* m_target_window_title = nullptr;

@@ -26,7 +26,8 @@
     <ClCompile Include="..\ext\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\ext\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="access\access.cpp" />
+    <ClCompile Include="access\local\winapi.cpp" />
+    <ClCompile Include="access\remote\dma.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="logger\logger.cpp" />
     <ClCompile Include="rendering\rendering.cpp" />
@@ -40,7 +41,9 @@
     <ClInclude Include="..\ext\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\ext\imgui\imstb_textedit.h" />
     <ClInclude Include="..\ext\imgui\imstb_truetype.h" />
-    <ClInclude Include="access\access.hpp" />
+    <ClInclude Include="access\adapter.hpp" />
+    <ClInclude Include="access\local\winapi.hpp" />
+    <ClInclude Include="access\remote\dma.hpp" />
     <ClInclude Include="access\template\tadapter.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />

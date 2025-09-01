@@ -1,6 +1,8 @@
 #include <core/core.hpp>
 #include <imgui.h>
 #include <string>
+#include <core/access/local/winapi.hpp>
+#include <core/access/remote/dma.hpp>
 
 Core::Core()
 	: m_renderer(std::make_unique<DX11Renderer>())
@@ -17,16 +19,30 @@ bool Core::initialize() {
 
 	switch (m_access_adapter_kind) {
 		case AccessAdapterKind::Local:
+			m_access_adapter = std::make_unique<WinApiAccessAdapter>();
+			if (!m_access_adapter->attach(m_target_window_title))
+			{
+				log_error("Failed to attach access adapter");
+				return false;
+			}
+
 			if (!m_renderer->initializeOverlay(m_target_window_title, m_target_window_class))
 			{
 				log_error("Failed to initialize overlay renderer");
 				return false;
 			}
+			
 			break;
 		case AccessAdapterKind::Remote:
 			if (!m_renderer->initialize(m_window_title))
 			{
 				log_error("Failed to initialize renderer");
+				return false;
+			}
+			m_access_adapter = std::make_unique<DMAAccessAdapter>();
+			if (!m_access_adapter->attach(m_target_window_title))
+			{
+				log_error("Failed to attach access adapter");
 				return false;
 			}
 			break;
