@@ -25,6 +25,7 @@
     <ClCompile Include="..\ext\imgui\backends\imgui_impl_win32.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
+    <ClCompile Include="access\access.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp" />
@@ -54,6 +55,9 @@
     <ClInclude Include="..\ext\imgui\backends\imgui_impl_win32.h">
       <Filter>imgui</Filter>
     </ClInclude>
+    <ClInclude Include="access\access.hpp" />
+    <ClInclude Include="access\template\tadapter.hpp" />
+    <ClInclude Include="types\vector.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">

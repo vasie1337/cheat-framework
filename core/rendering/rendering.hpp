@@ -9,6 +9,8 @@
 #include <string>
 #include <dwmapi.h>
 
+#include <core/types/vector.hpp>
+
 struct ImDrawData;
 struct ImGuiContext;
 
@@ -32,14 +34,15 @@ public:
     
     bool initializeImGui();
     void shutdownImGui();
-    void beginImGuiFrame();
-    void endImGuiFrame();
-    void renderImGui();
+
+    void beginImGuiFrame() const;
+    void endImGuiFrame() const;
+    void renderImGui() const;
     
     void beginFrame(float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
     void endFrame();
     
-    void onResize(int width, int height);
+    void onResize(Vector2<LONG> size);
 
     bool processMessages();
     
@@ -49,8 +52,7 @@ public:
     ID3D11RenderTargetView* getRenderTargetView() const { return m_renderTargetView.Get(); }
     ID3D11DepthStencilView* getDepthStencilView() const { return m_depthStencilView.Get(); }
     
-    int getWidth() const { return m_width; }
-    int getHeight() const { return m_height; }
+    Vector2<LONG> getSize() const { return m_size; }
     
     bool isInitialized() const { return m_initialized; }
     bool isVSyncEnabled() const { return m_vsyncEnabled; }
@@ -60,7 +62,7 @@ public:
     void setBorderlessFullscreen(bool enabled);
     
     void updateOverlayPosition();
-    void setOverlayInteractive(bool interactive);
+    void setOverlayInteractive(bool interactive) const;
     HWND getTargetWindow() const { return m_targetHwnd; }
 
 private:
@@ -74,9 +76,9 @@ private:
     
     void releaseRenderTargets();
     
-    HWND createWindow(const char* title, int width, int height);
+    HWND createWindow(const char* title, Vector2<LONG> size);
     HWND createOverlayWindow();
-    void makeWindowTransparent(HWND hwnd);
+    void makeWindowTransparent(HWND hwnd) const;
     HWND findTargetWindow(const char* windowTitle, const char* windowClass);
     static LRESULT CALLBACK windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -95,8 +97,7 @@ private:
     ComPtr<ID3D11BlendState> m_blendState;
     
     HWND m_hwnd;
-    int m_width;
-    int m_height;
+    Vector2<LONG> m_size;
     bool m_borderlessFullscreen;
     bool m_vsyncEnabled;
     bool m_initialized;

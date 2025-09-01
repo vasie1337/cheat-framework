@@ -26,6 +26,7 @@
     <ClCompile Include="..\ext\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\ext\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="access\access.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="logger\logger.cpp" />
     <ClCompile Include="rendering\rendering.cpp" />
@@ -39,9 +40,12 @@
     <ClInclude Include="..\ext\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\ext\imgui\imstb_textedit.h" />
     <ClInclude Include="..\ext\imgui\imstb_truetype.h" />
+    <ClInclude Include="access\access.hpp" />
+    <ClInclude Include="access\template\tadapter.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />
     <ClInclude Include="rendering\rendering.hpp" />
+    <ClInclude Include="types\vector.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
