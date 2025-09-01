@@ -6,7 +6,7 @@
 #include <core/rendering/rendering.hpp>
 #include <core/access/adapter.hpp>
 
-enum class AccessAdapterKind
+enum class TargetKind
 {
 	Local,
 	Remote
@@ -20,9 +20,9 @@ public:
 
 	bool initialize();
 
-	std::unique_ptr<Core> with_access_adapter(AccessAdapterKind adapter)
+	std::unique_ptr<Core> with_target_type(TargetKind target_type)
 	{
-		m_access_adapter_kind = adapter;
+		m_target_type = target_type;
 		return std::unique_ptr<Core>(this);
 	}
 	std::unique_ptr<Core> with_logger_backend(LoggerBackend backend)
@@ -52,7 +52,7 @@ public:
 	void shutdown();
 
 private:
-	AccessAdapterKind m_access_adapter_kind = AccessAdapterKind::Local;
+	TargetKind m_target_type = TargetKind::Local;
 	LoggerBackend m_logger_backend_kind = LoggerBackend::Console;
 	LogLevel m_logger_level_kind = LogLevel::Debug;
 

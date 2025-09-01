@@ -24,11 +24,11 @@ int main()
 {
 	std::unique_ptr<Core> core = std::make_unique<Core>();
 
-	if (!core->with_access_adapter(AccessAdapterKind::Local)
+	if (!core->with_target_type(TargetKind::Local)
+			 ->with_target("AssaultCube", nullptr, "ac_client.exe")
+			 ->with_window_title("AssaultCube Cheat")
 			 ->with_logger_backend(LoggerBackend::Console)
 			 ->with_logger_level(LogLevel::Debug)
-			 ->with_window_title("AssaultCube Cheat")
-			 ->with_target("AssaultCube", nullptr, "ac_client.exe")
 			 ->initialize())
 	{
 		log_critical("Failed to initialize core");

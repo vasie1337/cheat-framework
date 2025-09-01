@@ -18,9 +18,9 @@ bool Core::initialize()
 {
 	Logger::instance().initialize(m_logger_backend_kind, m_logger_level_kind, "core.log");
 
-	switch (m_access_adapter_kind)
+	switch (m_target_type)
 	{
-	case AccessAdapterKind::Local:
+	case TargetKind::Local:
 		m_access_adapter = std::make_unique<WinApiAccessAdapter>();
 		if (!m_access_adapter->attach(m_target_process_name))
 		{
@@ -34,7 +34,7 @@ bool Core::initialize()
 			return false;
 		}
 		break;
-	case AccessAdapterKind::Remote:
+	case TargetKind::Remote:
 		m_access_adapter = std::make_unique<DMAAccessAdapter>();
 		if (!m_access_adapter->attach(m_target_process_name))
 		{
