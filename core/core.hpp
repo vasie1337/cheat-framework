@@ -7,7 +7,7 @@
 
 #include <core/logger/logger.hpp>
 #include <core/rendering/rendering.hpp>
-#include <core/rendering/projection.hpp>
+#include <core/projection/projection.hpp>
 #include <core/access/adapter.hpp>
 #include <core/types/vector.hpp>
 #include <core/types/matrix.hpp>
