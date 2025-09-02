@@ -44,6 +44,7 @@ bool WinApiAccessAdapter::attach(const std::string &processName)
 void WinApiAccessAdapter::detach()
 {
     log_debug("Detaching WinApiAccessAdapter");
+    cleanupScatterHandle();
     if (m_processHandle != NULL)
     {
         CloseHandle(m_processHandle);
@@ -102,12 +103,13 @@ ScatterHandle WinApiAccessAdapter::createScatterHandle()
     return new WinApiScatterHandle();
 }
 
-void WinApiAccessAdapter::addScatterRead(ScatterHandle handle, uintptr_t address, void *buffer, size_t size)
+void WinApiAccessAdapter::addScatterRead(uintptr_t address, void *buffer, size_t size)
 {
-    if (handle == nullptr)
+    initializeScatterHandle();
+    if (m_scatter_handle == nullptr)
         return;
         
-    WinApiScatterHandle* scatterHandle = static_cast<WinApiScatterHandle*>(handle);
+    WinApiScatterHandle* scatterHandle = static_cast<WinApiScatterHandle*>(m_scatter_handle);
     ScatterReadEntry entry;
     entry.address = address;
     entry.buffer = buffer;
@@ -115,12 +117,12 @@ void WinApiAccessAdapter::addScatterRead(ScatterHandle handle, uintptr_t address
     scatterHandle->entries.push_back(entry);
 }
 
-bool WinApiAccessAdapter::executeScatterRead(ScatterHandle handle)
+bool WinApiAccessAdapter::executeScatterRead()
 {
-    if (handle == nullptr)
+    if (m_scatter_handle == nullptr)
         return false;
         
-    WinApiScatterHandle* scatterHandle = static_cast<WinApiScatterHandle*>(handle);
+    WinApiScatterHandle* scatterHandle = static_cast<WinApiScatterHandle*>(m_scatter_handle);
     bool allSuccess = true;
     
     for (const auto& entry : scatterHandle->entries)
@@ -132,6 +134,8 @@ bool WinApiAccessAdapter::executeScatterRead(ScatterHandle handle)
             allSuccess = false;
         }
     }
+    
+    scatterHandle->entries.clear();
     
     return allSuccess;
 }

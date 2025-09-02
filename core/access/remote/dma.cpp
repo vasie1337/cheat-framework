@@ -24,19 +24,18 @@ bool DMAAccessAdapter::write(uintptr_t address, const void *buffer, size_t size)
     return false;
 }
 
+void DMAAccessAdapter::addScatterRead(uintptr_t address, void *buffer, size_t size)
+{
+}
+
+bool DMAAccessAdapter::executeScatterRead()
+{
+    return false;
+}
+
 ScatterHandle DMAAccessAdapter::createScatterHandle()
 {
     return nullptr;
-}
-
-void DMAAccessAdapter::addScatterRead(ScatterHandle handle, uintptr_t address, void *buffer, size_t size)
-{
-    return;
-}
-
-bool DMAAccessAdapter::executeScatterRead(ScatterHandle handle)
-{
-    return false;
 }
 
 void DMAAccessAdapter::destroyScatterHandle(ScatterHandle handle)

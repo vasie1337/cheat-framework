@@ -39,11 +39,28 @@ public:
 	virtual bool write(uintptr_t address, const void *buffer, size_t size) = 0;
 
     // Scatter reading operations
-	virtual ScatterHandle createScatterHandle() = 0;
-	virtual void addScatterRead(ScatterHandle handle, uintptr_t address, void *buffer, size_t size) = 0;
-	virtual bool executeScatterRead(ScatterHandle handle) = 0;
-	virtual void destroyScatterHandle(ScatterHandle handle) = 0;
+	virtual void addScatterRead(uintptr_t address, void *buffer, size_t size) = 0;
+	virtual bool executeScatterRead() = 0;
 
+protected:
+	// Internal scatter handle management
+	ScatterHandle m_scatter_handle = nullptr;
+	virtual ScatterHandle createScatterHandle() = 0;
+	virtual void destroyScatterHandle(ScatterHandle handle) = 0;
+	
+	virtual void initializeScatterHandle() {
+		if (m_scatter_handle == nullptr) {
+			m_scatter_handle = createScatterHandle();
+		}
+	}
+	virtual void cleanupScatterHandle() {
+		if (m_scatter_handle != nullptr) {
+			destroyScatterHandle(m_scatter_handle);
+			m_scatter_handle = nullptr;
+		}
+	}
+	
+public:
 	// I/O
 	virtual bool setMousePosition(const Vector2<int> &position) = 0;
 	virtual bool setLeftMouseButton(bool state) = 0;

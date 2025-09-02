@@ -16,14 +16,11 @@ void get_globals(Core* core)
 	if (!game_base)
 		game_base = static_cast<uint32_t>(core->m_access_adapter->getModule("ac_client.exe")->baseAddress);
 
-	auto scatter_handle = core->m_access_adapter->createScatterHandle();
+	core->m_access_adapter->addScatterRead(game_base + 0x18AC04, &player_list_ptr, sizeof(uint32_t));
+	core->m_access_adapter->addScatterRead(game_base + 0x18AC0C, &player_list_count, sizeof(int));
+	core->m_access_adapter->addScatterRead(game_base + 0x17DFD0, &view_matrix, sizeof(Matrix<16>));
 
-	core->m_access_adapter->addScatterRead(scatter_handle, game_base + 0x18AC04, &player_list_ptr, sizeof(uint32_t));
-	core->m_access_adapter->addScatterRead(scatter_handle, game_base + 0x18AC0C, &player_list_count, sizeof(int));
-	core->m_access_adapter->addScatterRead(scatter_handle, game_base + 0x17DFD0, &view_matrix, sizeof(Matrix<16>));
-
-	core->m_access_adapter->executeScatterRead(scatter_handle);
-	core->m_access_adapter->destroyScatterHandle(scatter_handle);
+	core->m_access_adapter->executeScatterRead();
 }
 
 void get_players(Core* core)
@@ -34,22 +31,19 @@ void get_players(Core* core)
 		return;
 	}
 
-	auto scatter_handle = core->m_access_adapter->createScatterHandle();
-
 	std::vector<uint32_t> player_object_pointers;
 	player_object_pointers.resize(player_list_count);
 
 	for (int i = 0; i < player_list_count; ++i)
 	{
 		core->m_access_adapter->addScatterRead(
-			scatter_handle,
 			player_list_ptr + i * sizeof(uint32_t),
 			&player_object_pointers[i],
 			sizeof(uint32_t)
 		);
 	}
 
-	core->m_access_adapter->executeScatterRead(scatter_handle);
+	core->m_access_adapter->executeScatterRead();
 
 	std::vector<Vector3<float>> player_positions;
 	player_positions.resize(player_list_count);
@@ -59,7 +53,6 @@ void get_players(Core* core)
 		if (player_object_pointers[i] != 0)
 		{
 			core->m_access_adapter->addScatterRead(
-				scatter_handle,
 				player_object_pointers[i] + 0x4,
 				&player_positions[i],
 				sizeof(Vector3<float>)
@@ -67,8 +60,7 @@ void get_players(Core* core)
 		}
 	}
 
-	core->m_access_adapter->executeScatterRead(scatter_handle);
-	core->m_access_adapter->destroyScatterHandle(scatter_handle);
+	core->m_access_adapter->executeScatterRead();
 
 	for (int i = 1; i < player_list_count; ++i)
 	{
