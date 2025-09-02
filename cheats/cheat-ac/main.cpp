@@ -7,34 +7,81 @@
 #include <chrono>
 
 uint32_t game_base = 0x0;
-uint32_t player_list = 0x0;
+uint32_t player_list_ptr = 0x0;
 int player_list_count = 0;
 Matrix<16> view_matrix;
 
-void get_globals(Core *core)
+void get_globals(Core* core)
 {
 	if (!game_base)
 		game_base = static_cast<uint32_t>(core->m_access_adapter->getModule("ac_client.exe")->baseAddress);
 
-	player_list = core->m_access_adapter->read<uint32_t>(game_base + 0x18AC04);
-	player_list_count = core->m_access_adapter->read<int>(game_base + 0x18AC0C);
-	view_matrix = core->m_access_adapter->read<Matrix<16>>(game_base + 0x17DFD0);
+	auto scatter_handle = core->m_access_adapter->createScatterHandle();
+
+	core->m_access_adapter->addScatterRead(scatter_handle, game_base + 0x18AC04, &player_list_ptr, sizeof(uint32_t));
+	core->m_access_adapter->addScatterRead(scatter_handle, game_base + 0x18AC0C, &player_list_count, sizeof(int));
+	core->m_access_adapter->addScatterRead(scatter_handle, game_base + 0x17DFD0, &view_matrix, sizeof(Matrix<16>));
+
+	core->m_access_adapter->executeScatterRead(scatter_handle);
+	core->m_access_adapter->destroyScatterHandle(scatter_handle);
 }
 
-void get_players(Core *core)	
+void get_players(Core* core)
 {
-	ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
-
-	for (int i = 1; i < player_list_count; i++)
+	ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+	if (player_list_count <= 1)
 	{
-		uint32_t player_ptr = core->m_access_adapter->read<uint32_t>(player_list + i * 0x4);
+		return;
+	}
 
-		Vector3<float> position = core->m_access_adapter->read<Vector3<float>>(player_ptr + 0x4);
-		Vector2<float> screen_position;
-		
-		if (core->WorldToScreen(position, screen_position, view_matrix))
+	auto scatter_handle = core->m_access_adapter->createScatterHandle();
+
+	std::vector<uint32_t> player_object_pointers;
+	player_object_pointers.resize(player_list_count);
+
+	for (int i = 0; i < player_list_count; ++i)
+	{
+		core->m_access_adapter->addScatterRead(
+			scatter_handle,
+			player_list_ptr + i * sizeof(uint32_t),
+			&player_object_pointers[i],
+			sizeof(uint32_t)
+		);
+	}
+
+	core->m_access_adapter->executeScatterRead(scatter_handle);
+
+	std::vector<Vector3<float>> player_positions;
+	player_positions.resize(player_list_count);
+
+	for (int i = 0; i < player_list_count; ++i)
+	{
+		if (player_object_pointers[i] != 0)
 		{
-			draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 5.f, IM_COL32(255, 0, 0, 255), 8);
+			core->m_access_adapter->addScatterRead(
+				scatter_handle,
+				player_object_pointers[i] + 0x4,
+				&player_positions[i],
+				sizeof(Vector3<float>)
+			);
+		}
+	}
+
+	core->m_access_adapter->executeScatterRead(scatter_handle);
+	core->m_access_adapter->destroyScatterHandle(scatter_handle);
+
+	for (int i = 1; i < player_list_count; ++i)
+	{
+		Vector2<float> screen_position;
+		if (player_object_pointers[i] != 0 &&
+			core->WorldToScreen(player_positions[i], screen_position, view_matrix))
+		{
+			draw_list->AddCircleFilled(
+				ImVec2(screen_position.x, screen_position.y),
+				5.f,
+				IM_COL32(255, 0, 0, 255),
+				8
+			);
 		}
 	}
 }

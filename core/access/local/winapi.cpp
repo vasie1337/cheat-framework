@@ -99,21 +99,50 @@ bool WinApiAccessAdapter::write(uintptr_t address, const void *buffer, size_t si
 
 ScatterHandle WinApiAccessAdapter::createScatterHandle()
 {
-    return nullptr;
+    return new WinApiScatterHandle();
 }
 
 void WinApiAccessAdapter::addScatterRead(ScatterHandle handle, uintptr_t address, void *buffer, size_t size)
 {
-    return;
+    if (handle == nullptr)
+        return;
+        
+    WinApiScatterHandle* scatterHandle = static_cast<WinApiScatterHandle*>(handle);
+    ScatterReadEntry entry;
+    entry.address = address;
+    entry.buffer = buffer;
+    entry.size = size;
+    scatterHandle->entries.push_back(entry);
 }
 
 bool WinApiAccessAdapter::executeScatterRead(ScatterHandle handle)
 {
-    return false;
+    if (handle == nullptr)
+        return false;
+        
+    WinApiScatterHandle* scatterHandle = static_cast<WinApiScatterHandle*>(handle);
+    bool allSuccess = true;
+    
+    for (const auto& entry : scatterHandle->entries)
+    {
+        SIZE_T bytesRead = 0;
+        if (!ReadProcessMemory(m_processHandle, (LPCVOID)entry.address, entry.buffer, entry.size, &bytesRead) || 
+            bytesRead != entry.size)
+        {
+            allSuccess = false;
+        }
+    }
+    
+    return allSuccess;
 }
 
 void WinApiAccessAdapter::destroyScatterHandle(ScatterHandle handle)
 {
+    if (handle != nullptr)
+    {
+        WinApiScatterHandle* scatterHandle = static_cast<WinApiScatterHandle*>(handle);
+        delete scatterHandle;
+    }
 }
 
 bool WinApiAccessAdapter::setMousePosition(const Vector2<int> &position)

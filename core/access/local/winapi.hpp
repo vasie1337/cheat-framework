@@ -2,6 +2,7 @@
 #include <core/access/adapter.hpp>
 #include <windows.h>
 #include <tlhelp32.h>
+#include <vector>
 
 class WinApiAccessAdapter : public AccessAdapter
 {
@@ -33,6 +34,18 @@ public:
     bool getKeyState(int key) override;
 
 private:
+    struct ScatterReadEntry
+    {
+        uintptr_t address;
+        void* buffer;
+        size_t size;
+    };
+    
+    struct WinApiScatterHandle
+    {
+        std::vector<ScatterReadEntry> entries;
+    };
+
     HANDLE m_processHandle;
     DWORD m_processId;
 };
