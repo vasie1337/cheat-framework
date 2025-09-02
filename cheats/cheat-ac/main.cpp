@@ -66,7 +66,7 @@ void get_players(Core* core)
 	{
 		Vector2<float> screen_position;
 		if (player_object_pointers[i] != 0 &&
-			core->WorldToScreenDX(player_positions[i], screen_position, view_matrix))
+			core->m_projection_utils->WorldToScreenDX(player_positions[i], screen_position, view_matrix))
 		{
 			draw_list->AddCircleFilled(
 				ImVec2(screen_position.x, screen_position.y),

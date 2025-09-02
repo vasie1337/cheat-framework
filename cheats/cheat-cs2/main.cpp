@@ -125,7 +125,7 @@ void get_players(Core* core)
 		//printf("Entity %zu: %s (Position: %f, %f, %f)\n", i, entities[i].designer_name, entities[i].position.x, entities[i].position.y, entities[i].position.z);
 
 		Vector2<float> screen_position;
-		if (core->WorldToScreen(entities[i].position, screen_position, view_matrix))
+		if (core->m_projection_utils->WorldToScreen(entities[i].position, screen_position, view_matrix))
 		{
 			draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 5.f, IM_COL32(255, 0, 0, 255), 8);
 		}

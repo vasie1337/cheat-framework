@@ -30,6 +30,7 @@
     <ClCompile Include="access\remote\dma.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="logger\logger.cpp" />
+    <ClCompile Include="rendering\projection.cpp" />
     <ClCompile Include="rendering\rendering.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +48,7 @@
     <ClInclude Include="access\template\tadapter.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />
+    <ClInclude Include="rendering\projection.hpp" />
     <ClInclude Include="rendering\rendering.hpp" />
     <ClInclude Include="types\matrix.hpp" />
     <ClInclude Include="types\vector.hpp" />

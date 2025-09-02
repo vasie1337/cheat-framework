@@ -27,6 +27,7 @@
     </ClCompile>
     <ClCompile Include="access\local\winapi.cpp" />
     <ClCompile Include="access\remote\dma.cpp" />
+    <ClCompile Include="rendering\projection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp" />
@@ -62,6 +63,7 @@
     <ClInclude Include="access\remote\dma.hpp" />
     <ClInclude Include="access\adapter.hpp" />
     <ClInclude Include="types\matrix.hpp" />
+    <ClInclude Include="rendering\projection.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">

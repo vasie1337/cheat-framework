@@ -30,6 +30,7 @@ bool Core::initialize()
 			log_error("Failed to initialize overlay renderer");
 			return false;
 		}
+		m_projection_utils = std::make_unique<ProjectionUtils>(m_renderer.get());
 		break;
 	case TargetKind::Remote:
 		m_access_adapter = std::make_unique<DMAAccessAdapter>();
@@ -44,6 +45,7 @@ bool Core::initialize()
 			log_error("Failed to initialize renderer");
 			return false;
 		}
+		m_projection_utils = std::make_unique<ProjectionUtils>(m_renderer.get());
 		break;
 	}
 	return true;
