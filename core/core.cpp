@@ -90,27 +90,3 @@ bool Core::update()
 
 	return true;
 }
-
-bool Core::WorldToScreen(const Vector3<float>& VecOrigin, Vector2<float>& VecScreen, const Matrix<16>& Matrix) const
-{
-    const float W = VecOrigin.x * Matrix[3] + VecOrigin.y * Matrix[7] + VecOrigin.z * Matrix[11] + Matrix[15];
-    
-    if (W < 0.01f)
-        return false;
-
-    const float clipX = VecOrigin.x * Matrix[0] + VecOrigin.y * Matrix[4] + VecOrigin.z * Matrix[8] + Matrix[12];
-    const float clipY = VecOrigin.x * Matrix[1] + VecOrigin.y * Matrix[5] + VecOrigin.z * Matrix[9] + Matrix[13];
-
-    const float invW = 1.0f / W;
-    const auto screenSize = m_renderer->getSize();
-    
-    VecScreen.x = (clipX * invW + 1.0f) * screenSize.x * 0.5f;
-    VecScreen.y = (1.0f - clipY * invW) * screenSize.y * 0.5f;
-
-	if (VecScreen.x < 0 || VecScreen.x > screenSize.x ||
-		VecScreen.y < 0 || VecScreen.y > screenSize.y) {
-		return false;
-	}
-    
-    return true;
-}

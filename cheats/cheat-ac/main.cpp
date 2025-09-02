@@ -9,7 +9,7 @@
 uint32_t game_base = 0x0;
 uint32_t player_list_ptr = 0x0;
 int player_list_count = 0;
-Matrix<16> view_matrix;
+Matrix4x4<float> view_matrix;
 
 void get_globals(Core* core)
 {
@@ -18,7 +18,7 @@ void get_globals(Core* core)
 
 	core->m_access_adapter->addScatterRead(game_base + 0x18AC04, &player_list_ptr, sizeof(uint32_t));
 	core->m_access_adapter->addScatterRead(game_base + 0x18AC0C, &player_list_count, sizeof(int));
-	core->m_access_adapter->addScatterRead(game_base + 0x17DFD0, &view_matrix, sizeof(Matrix<16>));
+	core->m_access_adapter->addScatterRead(game_base + 0x17DFD0, &view_matrix, sizeof(Matrix4x4<float>));
 
 	core->m_access_adapter->executeScatterRead();
 }
@@ -66,7 +66,7 @@ void get_players(Core* core)
 	{
 		Vector2<float> screen_position;
 		if (player_object_pointers[i] != 0 &&
-			core->WorldToScreen(player_positions[i], screen_position, view_matrix))
+			core->WorldToScreenDX(player_positions[i], screen_position, view_matrix))
 		{
 			draw_list->AddCircleFilled(
 				ImVec2(screen_position.x, screen_position.y),

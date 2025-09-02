@@ -1,8 +1,159 @@
 #include <core/core.hpp>
+#include <core/logger/logger.hpp>
+#include <core/types/vector.hpp>
+#include <core/types/matrix.hpp>
+
 #include <thread>
 #include <chrono>
 
+uintptr_t client_dll = 0x0;
+
+uintptr_t ent_list = 0x0;
+uintptr_t local_player_ptr = 0x0;
+Matrix4x4<float> view_matrix;
+
+void get_globals(Core* core)
+{
+	if (!client_dll)
+		client_dll = core->m_access_adapter->getModule("client.dll")->baseAddress;
+
+	core->m_access_adapter->addScatterRead(client_dll + 0x1BEC440, &local_player_ptr, sizeof(local_player_ptr));
+	core->m_access_adapter->addScatterRead(client_dll + 0x1D0FE08, &ent_list, sizeof(ent_list));
+	core->m_access_adapter->addScatterRead(client_dll + 0x1E2D030, &view_matrix, sizeof(Matrix4x4<float>));
+
+	core->m_access_adapter->executeScatterRead();
+}
+
+class Entity
+{
+public:
+	uintptr_t instance;
+	uintptr_t identity;
+	uintptr_t designer_name_ptr;
+	uintptr_t game_scene_node;
+	Vector3<float> position;
+	char designer_name[64];
+
+	bool valid() const {
+		return instance != 0 && identity != 0 && designer_name_ptr != 0 && game_scene_node != 0;
+	}
+};
+
+std::vector<Entity> getEntities(Core* core)
+{
+	const int MaxLists = 4;
+	const int ListEntries = 512;
+	const int CEntityIdentitySize = 120;
+
+	uintptr_t listAddresses[MaxLists];
+	core->m_access_adapter->addScatterRead(ent_list + 0x10, listAddresses, sizeof(listAddresses));
+	core->m_access_adapter->executeScatterRead();
+
+	std::vector<std::vector<uint8_t>> entityChunks;
+	std::vector<uintptr_t> validListAddresses;
+
+	for (int i = 0; i < MaxLists; i++)
+	{
+		uintptr_t listAddress = listAddresses[i];
+		if (listAddress == 0) break;
+
+		validListAddresses.push_back(listAddress);
+		entityChunks.emplace_back(ListEntries * CEntityIdentitySize);
+	}
+
+	for (size_t i = 0; i < validListAddresses.size(); i++)
+	{
+		core->m_access_adapter->addScatterRead(validListAddresses[i], entityChunks[i].data(), entityChunks[i].size());
+	}
+
+	core->m_access_adapter->executeScatterRead();
+
+	std::vector<Entity> entities;
+	entities.resize(validListAddresses.size() * ListEntries);
+	for (size_t i = 0; i < entityChunks.size(); i++)
+	{
+		for (int j = 0; j < ListEntries; j++)
+		{
+			int entityIndex = static_cast<int>(i) * ListEntries + j;
+			if (entityIndex == 0) 
+				continue;
+
+			uintptr_t* identity = reinterpret_cast<uintptr_t*>(entityChunks[i].data() + (j * CEntityIdentitySize));
+			if (identity[0] == 0) 
+				continue;
+
+			Entity newEntity;
+			newEntity.instance = identity[0];
+
+			entities.push_back(newEntity);
+		}
+	}
+
+	for (auto& entity : entities)
+	{
+		core->m_access_adapter->addScatterRead(entity.instance + 0x10, &entity.identity, sizeof(entity.identity));
+		core->m_access_adapter->addScatterRead(entity.instance + 0x330, &entity.game_scene_node, sizeof(entity.game_scene_node));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& entity : entities)
+	{
+		core->m_access_adapter->addScatterRead(entity.identity + 0x20, &entity.designer_name_ptr, sizeof(entity.designer_name_ptr));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& entity : entities)
+	{
+		core->m_access_adapter->addScatterRead(entity.designer_name_ptr, &entity.designer_name, sizeof(entity.designer_name));
+		core->m_access_adapter->addScatterRead(entity.game_scene_node + 0x88, &entity.position, sizeof(entity.position));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	entities.erase(std::remove_if(entities.begin(), entities.end(), [](const Entity& e) { return !e.valid(); }), entities.end());
+
+	return entities;
+}
+
+void get_players(Core* core)
+{
+	ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+
+	std::vector<Entity> entities = getEntities(core);
+
+	for (size_t i = 0; i < entities.size(); i++)
+	{
+		//printf("Entity %zu: %s (Position: %f, %f, %f)\n", i, entities[i].designer_name, entities[i].position.x, entities[i].position.y, entities[i].position.z);
+
+		Vector2<float> screen_position;
+		if (core->WorldToScreen(entities[i].position, screen_position, view_matrix))
+		{
+			draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 5.f, IM_COL32(255, 0, 0, 255), 8);
+		}
+	}
+}
+
 int main()
 {
+	std::unique_ptr<Core> core = std::make_unique<Core>();
+
+	core->with_target_type(TargetKind::Local)
+		.with_logger_backend(LoggerBackend::Console)
+		.with_logger_level(LogLevel::Debug)
+		.with_target("Counter-Strike 2", nullptr, "cs2.exe")
+		.with_window_title("CS2 Cheat");
+
+	if (!core->initialize())
+	{
+		log_critical("Failed to initialize core");
+		return 1;
+	}
+
+	core->register_callback(get_globals);
+	core->register_callback(get_players);
+
+	while (core->update())
+	{
+	}
+
 	return 0;
 }
