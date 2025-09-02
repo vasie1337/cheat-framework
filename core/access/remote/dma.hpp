@@ -22,6 +22,11 @@ public:
     bool read(uintptr_t address, void *buffer, size_t size) override;
     bool write(uintptr_t address, const void *buffer, size_t size) override;
 
+    ScatterHandle createScatterHandle() override;
+    void addScatterRead(ScatterHandle handle, uintptr_t address, void *buffer, size_t size) override;
+    bool executeScatterRead(ScatterHandle handle) override;
+    void destroyScatterHandle(ScatterHandle handle) override;
+
     bool setMousePosition(const Vector2<int> &position) override;
     bool setLeftMouseButton(bool state) override;
     bool getKeyState(int key) override;

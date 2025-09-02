@@ -97,6 +97,25 @@ bool WinApiAccessAdapter::write(uintptr_t address, const void *buffer, size_t si
     return false;
 }
 
+ScatterHandle WinApiAccessAdapter::createScatterHandle()
+{
+    return nullptr;
+}
+
+void WinApiAccessAdapter::addScatterRead(ScatterHandle handle, uintptr_t address, void *buffer, size_t size)
+{
+    return;
+}
+
+bool WinApiAccessAdapter::executeScatterRead(ScatterHandle handle)
+{
+    return false;
+}
+
+void WinApiAccessAdapter::destroyScatterHandle(ScatterHandle handle)
+{
+}
+
 bool WinApiAccessAdapter::setMousePosition(const Vector2<int> &position)
 {
     mouse_event(MOUSEEVENTF_MOVE, position.x, position.y, 0, 0);

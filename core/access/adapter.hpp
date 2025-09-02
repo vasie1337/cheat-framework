@@ -19,6 +19,8 @@ public:
 	size_t size;
 };
 
+typedef void* ScatterHandle;
+
 class AccessAdapter
 {
 public:
@@ -35,6 +37,12 @@ public:
 	// Memory
 	virtual bool read(uintptr_t address, void *buffer, size_t size) = 0;
 	virtual bool write(uintptr_t address, const void *buffer, size_t size) = 0;
+
+    // Scatter reading operations
+	virtual ScatterHandle createScatterHandle() = 0;
+	virtual void addScatterRead(ScatterHandle handle, uintptr_t address, void *buffer, size_t size) = 0;
+	virtual bool executeScatterRead(ScatterHandle handle) = 0;
+	virtual void destroyScatterHandle(ScatterHandle handle) = 0;
 
 	// I/O
 	virtual bool setMousePosition(const Vector2<int> &position) = 0;
