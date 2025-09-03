@@ -28,6 +28,7 @@
     <ClCompile Include="..\ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="access\local\winapi.cpp" />
     <ClCompile Include="access\remote\dma.cpp" />
+    <ClCompile Include="config\config.cpp" />
     <ClCompile Include="core.cpp" />
     <ClCompile Include="logger\logger.cpp" />
     <ClCompile Include="projection\projection.cpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="access\local\winapi.hpp" />
     <ClInclude Include="access\remote\dma.hpp" />
     <ClInclude Include="access\template\tadapter.hpp" />
+    <ClInclude Include="config\config.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />
     <ClInclude Include="projection\projection.hpp" />
