@@ -1,6 +1,6 @@
 #pragma once
-
 #include <cmath>
+
 #include <imgui.h>
 
 template <typename T>

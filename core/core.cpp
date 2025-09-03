@@ -1,8 +1,8 @@
 #include <core/core.hpp>
-#include <imgui.h>
-#include <string>
 #include <core/access/local/winapi.hpp>
 #include <core/access/remote/dma.hpp>
+
+#include <imgui.h>
 
 bool Core::initialize()
 {
