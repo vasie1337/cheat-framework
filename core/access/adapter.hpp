@@ -10,12 +10,12 @@ class ProcessModule
 {
 public:
 	ProcessModule() : name(""),
-					  baseAddress(0),
+					  base(0),
 					  size(0)
 	{
 	}
 	std::string name;
-	uintptr_t baseAddress;
+	uintptr_t base;
 	size_t size;
 };
 
@@ -28,55 +28,55 @@ public:
 	virtual ~AccessAdapter() = default;
 
 	// Process
-	virtual bool attach(const std::string &processName) = 0;
+	virtual bool attach(const std::string &process_name) = 0;
 	virtual void detach() = 0;
 
 	// Modules
-	virtual bool getModules(std::vector<ProcessModule> &modules) = 0;
+	virtual bool get_modules(std::vector<ProcessModule> &modules) = 0;
 
 	// Memory
 	virtual bool read(uintptr_t address, void *buffer, size_t size) = 0;
 	virtual bool write(uintptr_t address, const void *buffer, size_t size) = 0;
 
     // Scatter reading operations
-	virtual void addScatterRead(uintptr_t address, void *buffer, size_t size) = 0;
-	virtual bool executeScatterRead() = 0;
+	virtual void add_scatter_read(uintptr_t address, void *buffer, size_t size) = 0;
+	virtual bool execute_scatter_read() = 0;
 
 protected:
 	// Internal scatter handle management
 	ScatterHandle m_scatter_handle = nullptr;
-	virtual ScatterHandle createScatterHandle() = 0;
-	virtual void destroyScatterHandle(ScatterHandle handle) = 0;
+	virtual ScatterHandle create_scatter_handle() = 0;
+	virtual void destroy_scatter_handle(ScatterHandle handle) = 0;
 	
-	virtual void initializeScatterHandle() {
+	virtual void initialize_scatter_handle() {
 		if (m_scatter_handle == nullptr) {
-			m_scatter_handle = createScatterHandle();
+			m_scatter_handle = create_scatter_handle();
 		}
 	}
-	virtual void cleanupScatterHandle() {
+	virtual void cleanup_scatter_handle() {
 		if (m_scatter_handle != nullptr) {
-			destroyScatterHandle(m_scatter_handle);
+			destroy_scatter_handle(m_scatter_handle);
 			m_scatter_handle = nullptr;
 		}
 	}
 	
 public:
 	// I/O
-	virtual bool setMousePosition(const vec2_t<int> &position) = 0;
-	virtual bool setLeftMouseButton(bool state) = 0;
-	virtual bool getKeyState(int key) = 0;
+	virtual bool set_mouse_position(const vec2_t<int> &position) = 0;
+	virtual bool set_left_mouse_button(bool state) = 0;
+	virtual bool get_key_state(int key) = 0;
 
 	// Implementation
-	std::unique_ptr<ProcessModule> getModule(const std::string &moduleName)
+	std::unique_ptr<ProcessModule> get_module(const std::string &module_name)
 	{
 		std::vector<ProcessModule> modules;
-		if (!getModules(modules))
+		if (!get_modules(modules))
 		{
 			return nullptr;
 		}
 		for (const auto &module : modules)
 		{
-			if (module.name == moduleName)
+			if (module.name == module_name)
 			{
 				return std::make_unique<ProcessModule>(module);
 			}
@@ -85,7 +85,7 @@ public:
 	}
 
 	template <typename T>
-	T read(uintptr_t address)
+	T read(uintptr_t address) const
 	{
 		T value{};
 		read(address, &value, sizeof(T));
@@ -93,7 +93,7 @@ public:
 	}
 
 	template <typename T>
-	void write(uintptr_t address, const T &value)
+	void write(uintptr_t address, const T &value) const
 	{
 		write(address, &value, sizeof(T));
 	}

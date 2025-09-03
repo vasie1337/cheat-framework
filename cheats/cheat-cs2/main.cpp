@@ -12,12 +12,12 @@ matrix4x4_t<float> view_matrix;
 void get_globals(Core* core)
 {
     if (!client_dll)
-        client_dll = core->m_access_adapter->getModule("client.dll")->baseAddress;
+        client_dll = core->m_access_adapter->get_module("client.dll")->base;
 
-    core->m_access_adapter->addScatterRead(client_dll + 0x1BEC440, &local_player_ptr, sizeof(local_player_ptr));
-    core->m_access_adapter->addScatterRead(client_dll + 0x1D0FE08, &ent_list, sizeof(ent_list));
-    core->m_access_adapter->addScatterRead(client_dll + 0x1E2D030, &view_matrix, sizeof(matrix4x4_t<float>));
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->add_scatter_read(client_dll + 0x1BEC440, &local_player_ptr, sizeof(local_player_ptr));
+    core->m_access_adapter->add_scatter_read(client_dll + 0x1D0FE08, &ent_list, sizeof(ent_list));
+    core->m_access_adapter->add_scatter_read(client_dll + 0x1E2D030, &view_matrix, sizeof(matrix4x4_t<float>));
+    core->m_access_adapter->execute_scatter_read();
 }
 
 struct Entity
@@ -57,8 +57,8 @@ std::vector<Entity> getEntities(Core* core)
     constexpr int CEntityIdentitySize = 0x78;
 
     uintptr_t listAddresses[MaxLists];
-    core->m_access_adapter->addScatterRead(ent_list + 0x10, listAddresses, sizeof(listAddresses));
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->add_scatter_read(ent_list + 0x10, listAddresses, sizeof(listAddresses));
+    core->m_access_adapter->execute_scatter_read();
 
     std::vector<std::vector<uint8_t>> entityChunks;
     std::vector<uintptr_t> validListAddresses;
@@ -72,9 +72,9 @@ std::vector<Entity> getEntities(Core* core)
 
     for (size_t i = 0; i < validListAddresses.size(); i++)
     {
-        core->m_access_adapter->addScatterRead(validListAddresses[i], entityChunks[i].data(), entityChunks[i].size());
+        core->m_access_adapter->add_scatter_read(validListAddresses[i], entityChunks[i].data(), entityChunks[i].size());
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     std::vector<Entity> entities;
     for (int i = 0; i < entityChunks.size(); i++)
@@ -94,23 +94,23 @@ std::vector<Entity> getEntities(Core* core)
     // Read entity data in batches
     for (auto& entity : entities)
     {
-        core->m_access_adapter->addScatterRead(entity.instance + 0x10, &entity.identity, sizeof(entity.identity));
-        core->m_access_adapter->addScatterRead(entity.instance + 0x330, &entity.game_scene_node, sizeof(entity.game_scene_node));
+        core->m_access_adapter->add_scatter_read(entity.instance + 0x10, &entity.identity, sizeof(entity.identity));
+        core->m_access_adapter->add_scatter_read(entity.instance + 0x330, &entity.game_scene_node, sizeof(entity.game_scene_node));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     for (auto& entity : entities)
     {
-        core->m_access_adapter->addScatterRead(entity.identity + 0x20, &entity.designer_name_ptr, sizeof(entity.designer_name_ptr));
+        core->m_access_adapter->add_scatter_read(entity.identity + 0x20, &entity.designer_name_ptr, sizeof(entity.designer_name_ptr));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     for (auto& entity : entities)
     {
-        core->m_access_adapter->addScatterRead(entity.designer_name_ptr, &entity.designer_name_buffer, sizeof(entity.designer_name_buffer));
-        core->m_access_adapter->addScatterRead(entity.game_scene_node + 0x88, &entity.position, sizeof(entity.position));
+        core->m_access_adapter->add_scatter_read(entity.designer_name_ptr, &entity.designer_name_buffer, sizeof(entity.designer_name_buffer));
+        core->m_access_adapter->add_scatter_read(entity.game_scene_node + 0x88, &entity.position, sizeof(entity.position));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     for (auto& entity : entities)
     {
@@ -138,44 +138,44 @@ void get_players(Core* core)
     // Read controller pawns
     for (auto& player : players)
     {
-        core->m_access_adapter->addScatterRead(player.entity.instance + 0x8FC, &player.controller_pawn, sizeof(player.controller_pawn));
+        core->m_access_adapter->add_scatter_read(player.entity.instance + 0x8FC, &player.controller_pawn, sizeof(player.controller_pawn));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     // Read list pawns
     for (auto& player : players)
     {
-        core->m_access_adapter->addScatterRead(ent_list + 0x8 * ((player.controller_pawn & 0x7FFF) >> 0X9) + 0x10, &player.list_pawn, sizeof(player.list_pawn));
+        core->m_access_adapter->add_scatter_read(ent_list + 0x8 * ((player.controller_pawn & 0x7FFF) >> 0X9) + 0x10, &player.list_pawn, sizeof(player.list_pawn));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     // Read player pawns
     for (auto& player : players)
     {
-        core->m_access_adapter->addScatterRead(player.list_pawn + 0x78 * (player.controller_pawn & 0x1FF), &player.player_pawn, sizeof(player.player_pawn));
+        core->m_access_adapter->add_scatter_read(player.list_pawn + 0x78 * (player.controller_pawn & 0x1FF), &player.player_pawn, sizeof(player.player_pawn));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     // Read game scene nodes
     for (auto& player : players)
     {
-        core->m_access_adapter->addScatterRead(player.player_pawn + 0x330, &player.entity.game_scene_node, sizeof(player.entity.game_scene_node));
+        core->m_access_adapter->add_scatter_read(player.player_pawn + 0x330, &player.entity.game_scene_node, sizeof(player.entity.game_scene_node));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     // Read bone arrays
     for (auto& player : players)
     {
-        core->m_access_adapter->addScatterRead(player.entity.game_scene_node + 0x190 + 0x80, &player.bone_array, sizeof(player.bone_array));
+        core->m_access_adapter->add_scatter_read(player.entity.game_scene_node + 0x190 + 0x80, &player.bone_array, sizeof(player.bone_array));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     // Read bones
     for (auto& player : players)
     {
-        core->m_access_adapter->addScatterRead(player.bone_array, &player.bones, sizeof(player.bones));
+        core->m_access_adapter->add_scatter_read(player.bone_array, &player.bones, sizeof(player.bones));
     }
-    core->m_access_adapter->executeScatterRead();
+    core->m_access_adapter->execute_scatter_read();
 
     // Draw bones
     for (const auto& player : players)

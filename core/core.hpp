@@ -76,5 +76,4 @@ private:
 	std::string m_target_process_name;
 
 	bool m_show_widgets = false;
-	bool m_did_shutdown = false;
 };

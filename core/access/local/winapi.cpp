@@ -2,9 +2,9 @@
 
 #include <core/logger/logger.hpp>
 
-bool WinApiAccessAdapter::attach(const std::string &processName)
+bool WinApiAccessAdapter::attach(const std::string &process_name)
 {
-    log_debug("Attaching WinApiAccessAdapter to %s", processName.c_str());
+    log_debug("Attaching WinApiAccessAdapter to %s", process_name.c_str());
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE)
     {
@@ -17,7 +17,7 @@ bool WinApiAccessAdapter::attach(const std::string &processName)
     {
         do
         {
-            if (strcmp((char *)pe32.szExeFile, processName.c_str()) == 0)
+            if (strcmp((char *)pe32.szExeFile, process_name.c_str()) == 0)
             {
                 m_processId = pe32.th32ProcessID;
                 break;
@@ -32,8 +32,8 @@ bool WinApiAccessAdapter::attach(const std::string &processName)
         return false;
     }
 
-    m_processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_processId);
-    if (m_processHandle == NULL)
+    m_process_handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, m_processId);
+    if (m_process_handle == NULL)
     {
         return false;
     }
@@ -44,16 +44,16 @@ bool WinApiAccessAdapter::attach(const std::string &processName)
 void WinApiAccessAdapter::detach()
 {
     log_debug("Detaching WinApiAccessAdapter");
-    cleanupScatterHandle();
-    if (m_processHandle != NULL)
+    cleanup_scatter_handle();
+    if (m_process_handle != NULL)
     {
-        CloseHandle(m_processHandle);
-        m_processHandle = NULL;
+        CloseHandle(m_process_handle);
+        m_process_handle = NULL;
         m_processId = 0;
     }
 }
 
-bool WinApiAccessAdapter::getModules(std::vector<ProcessModule> &modules)
+bool WinApiAccessAdapter::get_modules(std::vector<ProcessModule> &modules)
 {
     log_debug("Getting modules for WinApiAccessAdapter");
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, m_processId);
@@ -70,7 +70,7 @@ bool WinApiAccessAdapter::getModules(std::vector<ProcessModule> &modules)
         {
             ProcessModule module;
             module.name = std::string((char *)me32.szModule);
-            module.baseAddress = (uintptr_t)me32.modBaseAddr;
+            module.base = (uintptr_t)me32.modBaseAddr;
             module.size = me32.modBaseSize;
             modules.push_back(module);
         } while (Module32Next(snapshot, &me32));
@@ -82,7 +82,7 @@ bool WinApiAccessAdapter::getModules(std::vector<ProcessModule> &modules)
 
 bool WinApiAccessAdapter::read(uintptr_t address, void *buffer, size_t size)
 {
-    if (ReadProcessMemory(m_processHandle, (LPCVOID)address, buffer, size, NULL))
+    if (ReadProcessMemory(m_process_handle, (LPCVOID)address, buffer, size, NULL))
     {
         return true;
     }
@@ -91,21 +91,21 @@ bool WinApiAccessAdapter::read(uintptr_t address, void *buffer, size_t size)
 
 bool WinApiAccessAdapter::write(uintptr_t address, const void *buffer, size_t size)
 {
-    if (WriteProcessMemory(m_processHandle, (LPVOID)address, buffer, size, NULL))
+    if (WriteProcessMemory(m_process_handle, (LPVOID)address, buffer, size, NULL))
     {
         return true;
     }
     return false;
 }
 
-ScatterHandle WinApiAccessAdapter::createScatterHandle()
+ScatterHandle WinApiAccessAdapter::create_scatter_handle()
 {
     return new WinApiScatterHandle();
 }
 
-void WinApiAccessAdapter::addScatterRead(uintptr_t address, void *buffer, size_t size)
+void WinApiAccessAdapter::add_scatter_read(uintptr_t address, void *buffer, size_t size)
 {
-    initializeScatterHandle();
+    initialize_scatter_handle();
     if (m_scatter_handle == nullptr)
         return;
         
@@ -117,7 +117,7 @@ void WinApiAccessAdapter::addScatterRead(uintptr_t address, void *buffer, size_t
     scatterHandle->entries.push_back(entry);
 }
 
-bool WinApiAccessAdapter::executeScatterRead()
+bool WinApiAccessAdapter::execute_scatter_read()
 {
     if (m_scatter_handle == nullptr)
         return false;
@@ -128,7 +128,7 @@ bool WinApiAccessAdapter::executeScatterRead()
     for (const auto& entry : scatterHandle->entries)
     {
         SIZE_T bytesRead = 0;
-        if (!ReadProcessMemory(m_processHandle, (LPCVOID)entry.address, entry.buffer, entry.size, &bytesRead) || 
+        if (!ReadProcessMemory(m_process_handle, (LPCVOID)entry.address, entry.buffer, entry.size, &bytesRead) || 
             bytesRead != entry.size)
         {
             allSuccess = false;
@@ -140,7 +140,7 @@ bool WinApiAccessAdapter::executeScatterRead()
     return allSuccess;
 }
 
-void WinApiAccessAdapter::destroyScatterHandle(ScatterHandle handle)
+void WinApiAccessAdapter::destroy_scatter_handle(ScatterHandle handle)
 {
     if (handle != nullptr)
     {
@@ -149,13 +149,13 @@ void WinApiAccessAdapter::destroyScatterHandle(ScatterHandle handle)
     }
 }
 
-bool WinApiAccessAdapter::setMousePosition(const vec2_t<int> &position)
+bool WinApiAccessAdapter::set_mouse_position(const vec2_t<int> &position)
 {
     mouse_event(MOUSEEVENTF_MOVE, position.x, position.y, 0, 0);
     return true;
 }
 
-bool WinApiAccessAdapter::setLeftMouseButton(bool state)
+bool WinApiAccessAdapter::set_left_mouse_button(bool state)
 {
     if (state)
     {
@@ -168,7 +168,7 @@ bool WinApiAccessAdapter::setLeftMouseButton(bool state)
     return true;
 }
 
-bool WinApiAccessAdapter::getKeyState(int key)
+bool WinApiAccessAdapter::get_key_state(int key)
 {
     return GetAsyncKeyState(key) & 1;
 }

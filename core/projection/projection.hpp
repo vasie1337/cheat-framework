@@ -11,110 +11,110 @@ public:
     ~ProjectionUtils() = default;
 
     template<typename T>
-    bool WorldToScreen(const vec3_t<T>& worldPos, vec2_t<T>& screenPos, 
-                      const matrix4x4_t<T>& viewProjMatrix) const
+    bool WorldToScreen(const vec3_t<T>& world_pos, vec2_t<T>& screen_pos, 
+                      const matrix4x4_t<T>& view_matrix) const
     {
-        const T clipX = worldPos.x * viewProjMatrix(0,0) + 
-                       worldPos.y * viewProjMatrix(0,1) + 
-                       worldPos.z * viewProjMatrix(0,2) + 
-                       viewProjMatrix(0,3);
+        const T clipX = world_pos.x * view_matrix(0,0) + 
+                       world_pos.y * view_matrix(0,1) + 
+                       world_pos.z * view_matrix(0,2) + 
+                       view_matrix(0,3);
         
-        const T clipY = worldPos.x * viewProjMatrix(1,0) + 
-                       worldPos.y * viewProjMatrix(1,1) + 
-                       worldPos.z * viewProjMatrix(1,2) + 
-                       viewProjMatrix(1,3);
+        const T clipY = world_pos.x * view_matrix(1,0) + 
+                       world_pos.y * view_matrix(1,1) + 
+                       world_pos.z * view_matrix(1,2) + 
+                       view_matrix(1,3);
         
-        const T clipW = worldPos.x * viewProjMatrix(3,0) + 
-                       worldPos.y * viewProjMatrix(3,1) + 
-                       worldPos.z * viewProjMatrix(3,2) + 
-                       viewProjMatrix(3,3);
+        const T clipW = world_pos.x * view_matrix(3,0) + 
+                       world_pos.y * view_matrix(3,1) + 
+                       world_pos.z * view_matrix(3,2) + 
+                       view_matrix(3,3);
         
         if (clipW < T{0.01})
             return false;
         
         const T invW = T{1} / clipW;
-        const auto screenSize = m_renderer->get_size();
+        const auto screen_size = m_renderer->get_size();
         
-        screenPos.x = (clipX * invW + T{1}) * screenSize.x * T{0.5};
-        screenPos.y = (T{1} - clipY * invW) * screenSize.y * T{0.5};
+        screen_pos.x = (clipX * invW + T{1}) * screen_size.x * T{0.5};
+        screen_pos.y = (T{1} - clipY * invW) * screen_size.y * T{0.5};
         
-        return screenPos.x >= 0 && screenPos.x <= screenSize.x &&
-               screenPos.y >= 0 && screenPos.y <= screenSize.y;
+        return screen_pos.x >= 0 && screen_pos.x <= screen_size.x &&
+               screen_pos.y >= 0 && screen_pos.y <= screen_size.y;
     }
     
     template<typename T>
-    bool WorldToScreenDX(const vec3_t<T>& worldPos, vec2_t<T>& screenPos,
-                        const matrix4x4_t<T>& viewProjMatrix) const
+    bool WorldToScreenDX(const vec3_t<T>& world_pos, vec2_t<T>& screen_pos,
+                        const matrix4x4_t<T>& view_matrix) const
     {
-        const T clipX = worldPos.x * viewProjMatrix(0,0) + 
-                       worldPos.y * viewProjMatrix(1,0) + 
-                       worldPos.z * viewProjMatrix(2,0) + 
-                       viewProjMatrix(3,0);
+        const T clipX = world_pos.x * view_matrix(0,0) + 
+                       world_pos.y * view_matrix(1,0) + 
+                       world_pos.z * view_matrix(2,0) + 
+                       view_matrix(3,0);
         
-        const T clipY = worldPos.x * viewProjMatrix(0,1) + 
-                       worldPos.y * viewProjMatrix(1,1) + 
-                       worldPos.z * viewProjMatrix(2,1) + 
-                       viewProjMatrix(3,1);
+        const T clipY = world_pos.x * view_matrix(0,1) + 
+                       world_pos.y * view_matrix(1,1) + 
+                       world_pos.z * view_matrix(2,1) + 
+                       view_matrix(3,1);
         
-        const T clipW = worldPos.x * viewProjMatrix(0,3) + 
-                       worldPos.y * viewProjMatrix(1,3) + 
-                       worldPos.z * viewProjMatrix(2,3) + 
-                       viewProjMatrix(3,3);
+        const T clipW = world_pos.x * view_matrix(0,3) + 
+                       world_pos.y * view_matrix(1,3) + 
+                       world_pos.z * view_matrix(2,3) + 
+                       view_matrix(3,3);
         
         if (clipW < T{0.01})
             return false;
         
         const T invW = T{1} / clipW;
-        const auto screenSize = m_renderer->get_size();
+        const auto screen_size = m_renderer->get_size();
         
-        screenPos.x = (clipX * invW + T{1}) * screenSize.x * T{0.5};
-        screenPos.y = (T{1} - clipY * invW) * screenSize.y * T{0.5};
+        screen_pos.x = (clipX * invW + T{1}) * screen_size.x * T{0.5};
+        screen_pos.y = (T{1} - clipY * invW) * screen_size.y * T{0.5};
         
-        return screenPos.x >= 0 && screenPos.x <= screenSize.x &&
-               screenPos.y >= 0 && screenPos.y <= screenSize.y;
+        return screen_pos.x >= 0 && screen_pos.x <= screen_size.x &&
+               screen_pos.y >= 0 && screen_pos.y <= screen_size.y;
     }
     
     template<typename T>
-    bool WorldToScreen3x4(const vec3_t<T>& worldPos, vec2_t<T>& screenPos,
+    bool WorldToScreen3x4(const vec3_t<T>& world_pos, vec2_t<T>& screen_pos,
                          const matrix3x4_t<T>& transform,
                          const matrix4x4_t<T>& projection) const
     {
         vec3_t<T> viewPos;
-        viewPos.x = worldPos.x * transform(0,0) + worldPos.y * transform(0,1) + 
-                   worldPos.z * transform(0,2) + transform(0,3);
-        viewPos.y = worldPos.x * transform(1,0) + worldPos.y * transform(1,1) + 
-                   worldPos.z * transform(1,2) + transform(1,3);
-        viewPos.z = worldPos.x * transform(2,0) + worldPos.y * transform(2,1) + 
-                   worldPos.z * transform(2,2) + transform(2,3);
+        viewPos.x = world_pos.x * transform(0,0) + world_pos.y * transform(0,1) + 
+                   world_pos.z * transform(0,2) + transform(0,3);
+        viewPos.y = world_pos.x * transform(1,0) + world_pos.y * transform(1,1) + 
+                   world_pos.z * transform(1,2) + transform(1,3);
+        viewPos.z = world_pos.x * transform(2,0) + world_pos.y * transform(2,1) + 
+                   world_pos.z * transform(2,2) + transform(2,3);
         
-        return WorldToScreen(viewPos, screenPos, projection);
+        return WorldToScreen(viewPos, screen_pos, projection);
     }
     
     template<typename T>
-    bool WorldToScreenUnity(const vec3_t<T>& worldPos, vec2_t<T>& screenPos,
+    bool WorldToScreenUnity(const vec3_t<T>& world_pos, vec2_t<T>& screen_pos,
                            const matrix4x4_t<T>& mvpMatrix) const
     {
         vec4_t<T> clipPos;
-        clipPos.x = worldPos.x * mvpMatrix(0,0) + worldPos.y * mvpMatrix(0,1) + 
-                   worldPos.z * mvpMatrix(0,2) + mvpMatrix(0,3);
-        clipPos.y = worldPos.x * mvpMatrix(1,0) + worldPos.y * mvpMatrix(1,1) + 
-                   worldPos.z * mvpMatrix(1,2) + mvpMatrix(1,3);
-        clipPos.z = worldPos.x * mvpMatrix(2,0) + worldPos.y * mvpMatrix(2,1) + 
-                   worldPos.z * mvpMatrix(2,2) + mvpMatrix(2,3);
-        clipPos.w = worldPos.x * mvpMatrix(3,0) + worldPos.y * mvpMatrix(3,1) + 
-                   worldPos.z * mvpMatrix(3,2) + mvpMatrix(3,3);
+        clipPos.x = world_pos.x * mvpMatrix(0,0) + world_pos.y * mvpMatrix(0,1) + 
+                   world_pos.z * mvpMatrix(0,2) + mvpMatrix(0,3);
+        clipPos.y = world_pos.x * mvpMatrix(1,0) + world_pos.y * mvpMatrix(1,1) + 
+                   world_pos.z * mvpMatrix(1,2) + mvpMatrix(1,3);
+        clipPos.z = world_pos.x * mvpMatrix(2,0) + world_pos.y * mvpMatrix(2,1) + 
+                   world_pos.z * mvpMatrix(2,2) + mvpMatrix(2,3);
+        clipPos.w = world_pos.x * mvpMatrix(3,0) + world_pos.y * mvpMatrix(3,1) + 
+                   world_pos.z * mvpMatrix(3,2) + mvpMatrix(3,3);
         
         if (clipPos.w < T{0.01})
             return false;
         
         const T invW = T{1} / clipPos.w;
-        const auto screenSize = m_renderer->get_size();
+        const auto screen_size = m_renderer->get_size();
         
-        screenPos.x = (clipPos.x * invW + T{1}) * screenSize.x * T{0.5};
-        screenPos.y = (clipPos.y * invW + T{1}) * screenSize.y * T{0.5};
+        screen_pos.x = (clipPos.x * invW + T{1}) * screen_size.x * T{0.5};
+        screen_pos.y = (clipPos.y * invW + T{1}) * screen_size.y * T{0.5};
         
-        return screenPos.x >= 0 && screenPos.x <= screenSize.x &&
-               screenPos.y >= 0 && screenPos.y <= screenSize.y;
+        return screen_pos.x >= 0 && screen_pos.x <= screen_size.x &&
+               screen_pos.y >= 0 && screen_pos.y <= screen_size.y;
     }
 
 private:

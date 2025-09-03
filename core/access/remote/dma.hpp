@@ -14,24 +14,24 @@ public:
         detach();
     }
 
-    bool attach(const std::string &processName) override;
+    bool attach(const std::string &process_name) override;
     void detach() override;
 
-    bool getModules(std::vector<ProcessModule> &modules) override;
+    bool get_modules(std::vector<ProcessModule> &modules) override;
 
     bool read(uintptr_t address, void *buffer, size_t size) override;
     bool write(uintptr_t address, const void *buffer, size_t size) override;
 
-    void addScatterRead(uintptr_t address, void *buffer, size_t size) override;
-    bool executeScatterRead() override;
+    void add_scatter_read(uintptr_t address, void *buffer, size_t size) override;
+    bool execute_scatter_read() override;
 
-    bool setMousePosition(const vec2_t<int> &position) override;
-    bool setLeftMouseButton(bool state) override;
-    bool getKeyState(int key) override;
+    bool set_mouse_position(const vec2_t<int> &position) override;
+    bool set_left_mouse_button(bool state) override;
+    bool get_key_state(int key) override;
 
 protected:
-    ScatterHandle createScatterHandle() override;
-    void destroyScatterHandle(ScatterHandle handle) override;
+    ScatterHandle create_scatter_handle() override;
+    void destroy_scatter_handle(ScatterHandle handle) override;
 
 private:
 };
