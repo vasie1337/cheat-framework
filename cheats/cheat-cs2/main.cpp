@@ -29,14 +29,39 @@ class Entity
 public:
 	uintptr_t instance;
 	uintptr_t identity;
-	uintptr_t designer_name_ptr;
 	uintptr_t game_scene_node;
 	Vector3<float> position;
-	char designer_name[64];
+	uintptr_t designer_name_ptr;
+	char designer_name_buffer[64];
+	std::string designer_name;
 
 	bool valid() const {
-		return instance != 0 && identity != 0 && designer_name_ptr != 0 && game_scene_node != 0;
+		return instance != 0 && identity != 0;
 	}
+};
+
+class SkeletonBone
+{
+public:
+	Vector3<float> position;
+	float scale;
+	Vector4<float> rotation;
+};
+
+class Player
+{
+public:
+	Player(Entity entity) : entity(entity) {}
+	Entity entity;
+
+	uintptr_t controller_pawn;
+	uintptr_t list_pawn;
+	uintptr_t player_pawn;
+	uintptr_t bone_array;
+
+#define BONE_COUNT 64
+	SkeletonBone bones[BONE_COUNT];
+
 };
 
 std::vector<Entity> getEntities(Core* core)
@@ -104,10 +129,15 @@ std::vector<Entity> getEntities(Core* core)
 
 	for (auto& entity : entities)
 	{
-		core->m_access_adapter->addScatterRead(entity.designer_name_ptr, &entity.designer_name, sizeof(entity.designer_name));
+		core->m_access_adapter->addScatterRead(entity.designer_name_ptr, &entity.designer_name_buffer, sizeof(entity.designer_name_buffer));
 		core->m_access_adapter->addScatterRead(entity.game_scene_node + 0x88, &entity.position, sizeof(entity.position));
 	}
 	core->m_access_adapter->executeScatterRead();
+
+	for (auto& entity : entities)
+	{
+		entity.designer_name = std::string(entity.designer_name_buffer);
+	}
 
 	entities.erase(std::remove_if(entities.begin(), entities.end(), [](const Entity& e) { return !e.valid(); }), entities.end());
 
@@ -120,14 +150,60 @@ void get_players(Core* core)
 
 	std::vector<Entity> entities = getEntities(core);
 
+	std::vector<Player> players;
 	for (size_t i = 0; i < entities.size(); i++)
 	{
-		//printf("Entity %zu: %s (Position: %f, %f, %f)\n", i, entities[i].designer_name, entities[i].position.x, entities[i].position.y, entities[i].position.z);
-
-		Vector2<float> screen_position;
-		if (core->m_projection_utils->WorldToScreen(entities[i].position, screen_position, view_matrix))
+		if (entities[i].designer_name == "cs_player_controller")
 		{
-			draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 5.f, IM_COL32(255, 0, 0, 255), 8);
+			players.push_back(Player(entities[i]));
+		}
+	}
+
+	for (auto& player : players)
+	{
+		core->m_access_adapter->addScatterRead(player.entity.instance + 0x8FC, &player.controller_pawn, sizeof(player.controller_pawn));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& player : players)
+	{
+		core->m_access_adapter->addScatterRead(ent_list + 0x8 * ((player.controller_pawn & 0x7FFF) >> 0X9) + 0x10, &player.list_pawn, sizeof(player.list_pawn));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& player : players)
+	{
+		core->m_access_adapter->addScatterRead(player.list_pawn + 0x78 * (player.controller_pawn & 0x1FF), &player.player_pawn, sizeof(player.player_pawn));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& player : players)
+	{
+		core->m_access_adapter->addScatterRead(player.player_pawn + 0x330, &player.entity.game_scene_node, sizeof(player.entity.game_scene_node));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& player : players)
+	{
+		core->m_access_adapter->addScatterRead(player.entity.game_scene_node + 0x190 + 0x80, &player.bone_array, sizeof(player.bone_array));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& player : players)
+	{
+		core->m_access_adapter->addScatterRead(player.bone_array, &player.bones, sizeof(player.bones));
+	}
+	core->m_access_adapter->executeScatterRead();
+
+	for (auto& player : players)
+	{
+		for (size_t j = 0; j < BONE_COUNT; j++)
+		{
+			Vector2<float> screen_position;
+			if (core->m_projection_utils->WorldToScreen(player.bones[j].position, screen_position, view_matrix))
+			{
+				draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 3.f, IM_COL32(255, 0, 0, 100), 8);
+			}
 		}
 	}
 }

@@ -708,6 +708,8 @@ void DX11Renderer::setOverlayInteractive(bool interactive) const
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 
+		SetForegroundWindow(m_hwnd);
+
         log_debug("Overlay set to interactive mode");
     }
     else
@@ -717,6 +719,8 @@ void DX11Renderer::setOverlayInteractive(bool interactive) const
 
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
+        SetForegroundWindow(m_targetHwnd);
 
         log_debug("Overlay set to click-through mode");
     }
