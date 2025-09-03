@@ -10,7 +10,7 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DX11Renderer::DX11Renderer()
-    : m_hwnd(nullptr), m_size(0, 0), m_vsync_enabled(false), m_initialized(false), m_should_close(false), m_feature_level(D3D_FEATURE_LEVEL_11_0), m_back_buffer_format(DXGI_FORMAT_R8G8B8A8_UNORM), m_msaa_quality(0), m_sample_count(1), m_target_hwnd(nullptr), m_imgui_initialized(false)
+    : m_hwnd(nullptr), m_size(0, 0), m_initialized(false), m_should_close(false), m_feature_level(D3D_FEATURE_LEVEL_11_0), m_back_buffer_format(DXGI_FORMAT_R8G8B8A8_UNORM), m_msaa_quality(0), m_sample_count(1), m_target_hwnd(nullptr), m_imgui_initialized(false)
 {
     m_target_rect = {0, 0, 0, 0};
     m_margins = {-1, -1, -1, -1};
@@ -21,7 +21,7 @@ DX11Renderer::~DX11Renderer()
     shutdown();
 }
 
-bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen, const char *targetWindowTitle, const char *targetWindowClass)
+bool DX11Renderer::initialize(std::string window_title, std::string target_window_title)
 {
     if (m_initialized)
     {
@@ -29,14 +29,14 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
         return true;
     }
 
-    bool is_overlay = (targetWindowTitle != nullptr);
-
+    bool is_overlay = !target_window_title.empty();
+    
     if (is_overlay)
     {
-        m_target_hwnd = find_target_window(targetWindowTitle, targetWindowClass);
+        m_target_hwnd = find_target_window(target_window_title);
         if (!m_target_hwnd)
         {
-            log_error("Failed to find target window: %s", targetWindowTitle);
+            log_error("Failed to find target window: %s", target_window_title.c_str());
             return false;
         }
 
@@ -61,7 +61,7 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
     {
         m_size = vec2_t<LONG>(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
-        m_hwnd = create_window(windowTitle, m_size);
+        m_hwnd = create_window(window_title, m_size);
         if (!m_hwnd)
         {
             log_error("Failed to create window");
@@ -430,8 +430,8 @@ void DX11Renderer::begin_frame(float r, float g, float b, float a)
 
     update_overlay_position();
 
-    float clearColor[4] = {r, g, b, a};
-    m_context->ClearRenderTargetView(m_render_target_view.Get(), clearColor);
+    float clear_color[4] = {r, g, b, a};
+    m_context->ClearRenderTargetView(m_render_target_view.Get(), clear_color);
     m_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     begin_imgui_frame();
@@ -445,9 +445,7 @@ void DX11Renderer::end_frame()
     end_imgui_frame();
     render_imgui();
 
-    UINT syncInterval = m_vsync_enabled ? 1 : 0;
-    HRESULT hr = m_swapChain->Present(syncInterval, 0);
-
+    HRESULT hr = m_swapChain->Present(0, 0);
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
     {
         log_error("Device lost during Present: 0x%08X", hr);
@@ -488,7 +486,7 @@ void DX11Renderer::on_resize(vec2_t<LONG> size)
     set_viewport();
 }
 
-HWND DX11Renderer::create_window(const char *title, vec2_t<LONG> size)
+HWND DX11Renderer::create_window(std::string title, vec2_t<LONG> size)
 {
     const char *className = "DX11RendererWindow";
     HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -515,7 +513,7 @@ HWND DX11Renderer::create_window(const char *title, vec2_t<LONG> size)
     HWND hwnd = CreateWindowExA(
         0,
         className,
-        title,
+        title.c_str(),
         WS_POPUP,
         0, 0,
         size.x,
@@ -594,42 +592,9 @@ void DX11Renderer::make_window_transparent(HWND hwnd) const
     DeleteObject(bb.hRgnBlur);
 }
 
-HWND DX11Renderer::find_target_window(const char *windowTitle, const char *windowClass)
+HWND DX11Renderer::find_target_window(std::string window_title)
 {
-    HWND hwnd = nullptr;
-
-    if (windowClass)
-    {
-        hwnd = FindWindowA(windowClass, windowTitle);
-    }
-    else
-    {
-        hwnd = FindWindowA(nullptr, windowTitle);
-    }
-
-    if (!hwnd && windowTitle)
-    {
-        struct FindWindowData
-        {
-            const char *title;
-            HWND result;
-        } data = {windowTitle, nullptr};
-
-        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL
-                    {
-            auto* data = reinterpret_cast<FindWindowData*>(lParam);
-            char title[256];
-            if (GetWindowTextA(hwnd, title, sizeof(title)) && strstr(title, data->title))
-            {
-                data->result = hwnd;
-                return FALSE;
-            }
-            return TRUE; }, reinterpret_cast<LPARAM>(&data));
-
-        hwnd = data.result;
-    }
-
-    return hwnd;
+    return FindWindowA(nullptr, window_title.c_str());
 }
 
 void DX11Renderer::update_overlay_position()

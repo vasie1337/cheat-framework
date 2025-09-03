@@ -27,7 +27,7 @@ public:
     DX11Renderer();
     ~DX11Renderer();
 
-    bool initialize(const char *windowTitle, bool borderlessFullscreen = true, const char *targetWindowTitle = nullptr, const char *targetWindowClass = nullptr);
+    bool initialize(std::string window_title, std::string target_window_title = "");
 
     void shutdown();
 
@@ -42,7 +42,6 @@ public:
     void end_frame();
 
     void on_resize(vec2_t<LONG> size);
-
     bool process_messages();
 
     HWND get_window() const { return m_hwnd; }
@@ -54,8 +53,6 @@ public:
     vec2_t<LONG> get_size() const { return m_size; }
 
     bool is_initialized() const { return m_initialized; }
-    bool is_vsync_enabled() const { return m_vsync_enabled; }
-    void set_vsync(bool enabled) { m_vsync_enabled = enabled; }
 
     void update_overlay_position();
     void set_overlay_interactive(bool interactive) const;
@@ -72,12 +69,12 @@ private:
 
     void release_render_targets();
 
-    HWND create_window(const char *title, vec2_t<LONG> size);
+    HWND create_window(std::string title, vec2_t<LONG> size);
     HWND create_overlay_window();
     void make_window_transparent(HWND hwnd) const;
-    HWND find_target_window(const char *windowTitle, const char *windowClass);
-    static LRESULT CALLBACK window_proc_static(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    LRESULT window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    HWND find_target_window(std::string window_title);
+    static LRESULT CALLBACK window_proc_static(HWND hwnd, UINT uMsg, WPARAM w_param, LPARAM l_param);
+    LRESULT window_proc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param);
 
     ComPtr<ID3D11Device> m_device;
     ComPtr<ID3D11DeviceContext> m_context;
@@ -94,7 +91,6 @@ private:
 
     HWND m_hwnd;
     vec2_t<LONG> m_size;
-    bool m_vsync_enabled;
     bool m_initialized;
     bool m_imgui_initialized;
     bool m_should_close;

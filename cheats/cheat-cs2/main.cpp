@@ -198,7 +198,7 @@ int main()
     core->with_target_type(TargetKind::Local)
         .with_logger_backend(LoggerBackend::Console)
         .with_logger_level(LogLevel::Debug)
-        .with_target("Counter-Strike 2", nullptr, "cs2.exe")
+        .with_target("Counter-Strike 2", "cs2.exe")
         .with_window_title("CS2 Cheat");
 
     if (!core->initialize())

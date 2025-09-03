@@ -41,16 +41,15 @@ public:
 		m_logger_level_kind = level;
 		return *this;
 	}
-	Core &with_window_title(const char *title)
+	Core& with_window_title(std::string title)
 	{
 		m_window_title = title;
 		return *this;
 	}
-	Core &with_target(const char *title, const char *className, const char *processName)
+	Core &with_target(std::string window_title, std::string process_name)
 	{
-		m_target_window_title = title;
-		m_target_window_class = className;
-		m_target_process_name = processName;
+		m_target_window_title = window_title;
+		m_target_process_name = process_name;
 		return *this;
 	}
 
@@ -72,10 +71,9 @@ private:
 
 	std::vector<std::function<void(Core*)>> m_callbacks;
 
-	const char *m_window_title = nullptr;
-	const char *m_target_window_title = nullptr;
-	const char *m_target_window_class = nullptr;
-	const char *m_target_process_name = nullptr;
+	std::string m_window_title;
+	std::string m_target_window_title;
+	std::string m_target_process_name;
 
 	bool m_show_widgets = false;
 	bool m_did_shutdown = false;

@@ -85,7 +85,7 @@ int main()
 	core->with_target_type(TargetKind::Local)
 		.with_logger_backend(LoggerBackend::Console)
 		.with_logger_level(LogLevel::Debug)
-		.with_target("AssaultCube", nullptr, "ac_client.exe")
+		.with_target("AssaultCube", "ac_client.exe")
 		.with_window_title("AssaultCube Cheat");
 
 	if (!core->initialize())

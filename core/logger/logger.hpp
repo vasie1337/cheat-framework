@@ -78,5 +78,25 @@ private:
 #define log_debug(...) Logger::instance().debug(__VA_ARGS__)
 #define log_info(...) Logger::instance().info(__VA_ARGS__)
 #define log_warning(...) Logger::instance().warning(__VA_ARGS__)
-#define log_error(...) Logger::instance().error(__VA_ARGS__)
-#define log_critical(...) Logger::instance().critical(__VA_ARGS__)
+
+#ifdef _DEBUG
+constexpr bool DEBUG_CONFIG = true;
+#else
+constexpr bool DEBUG_CONFIG = false;
+#endif
+
+#define log_error(...) \
+	do { \
+	    Logger::instance().error(__VA_ARGS__); \
+	    if constexpr (DEBUG_CONFIG) { \
+	        __debugbreak(); \
+	    } \
+	} while(0)
+
+#define log_critical(...) \
+	do { \
+	    Logger::instance().critical(__VA_ARGS__); \
+	    if constexpr (DEBUG_CONFIG) { \
+	        __debugbreak(); \
+	    } \
+	} while(0)

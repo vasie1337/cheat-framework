@@ -25,7 +25,7 @@ bool Core::initialize()
 			return false;
 		}
 		log_debug("Local access adapter attached to %s", m_target_process_name);
-		if (!m_renderer->initialize(m_target_window_title, true, m_target_window_title, m_target_window_class))
+		if (!m_renderer->initialize(m_target_window_title, m_target_window_title))
 		{
 			log_error("Failed to initialize overlay renderer");
 			return false;
