@@ -149,8 +149,8 @@ void DX11Renderer::shutdown()
     m_blend_state.Reset();
     m_rasterizer_state.Reset();
     m_depth_stencil_state.Reset();
-    m_swapChain.Reset();
-    m_dxgiFactory.Reset();
+    m_swap_chain.Reset();
+    m_dxgi_factory.Reset();
     m_context.Reset();
     m_device.Reset();
 
@@ -165,12 +165,12 @@ void DX11Renderer::shutdown()
 
 bool DX11Renderer::create_device()
 {
-    UINT createDeviceFlags = 0;
+    UINT create_device_flags = 0;
 #ifdef _DEBUG
-    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    create_device_flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-    D3D_FEATURE_LEVEL featureLevels[] =
+    D3D_FEATURE_LEVEL feature_levels[] =
         {
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
@@ -182,9 +182,9 @@ bool DX11Renderer::create_device()
         nullptr,
         D3D_DRIVER_TYPE_HARDWARE,
         nullptr,
-        createDeviceFlags,
-        featureLevels,
-        ARRAYSIZE(featureLevels),
+        create_device_flags,
+        feature_levels,
+        ARRAYSIZE(feature_levels),
         D3D11_SDK_VERSION,
         &m_device,
         &m_feature_level,
@@ -212,7 +212,7 @@ bool DX11Renderer::create_device()
         return false;
     }
 
-    hr = adapter->GetParent(IID_PPV_ARGS(&m_dxgiFactory));
+    hr = adapter->GetParent(IID_PPV_ARGS(&m_dxgi_factory));
     if (FAILED(hr))
     {
         log_error("Failed to get DXGI factory: 0x%08X", hr);
@@ -253,13 +253,13 @@ bool DX11Renderer::create_swap_chain(HWND hwnd)
     fullscreenDesc.RefreshRate.Denominator = 1;
     fullscreenDesc.Windowed = TRUE;
 
-    HRESULT hr = m_dxgiFactory->CreateSwapChainForHwnd(
+    HRESULT hr = m_dxgi_factory->CreateSwapChainForHwnd(
         m_device.Get(),
         hwnd,
         &swapChainDesc,
         &fullscreenDesc,
         nullptr,
-        &m_swapChain);
+        &m_swap_chain);
 
     if (FAILED(hr))
     {
@@ -267,7 +267,7 @@ bool DX11Renderer::create_swap_chain(HWND hwnd)
         return false;
     }
 
-    m_dxgiFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
+    m_dxgi_factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
 
     log_debug("Swap chain created successfully");
     return true;
@@ -275,15 +275,15 @@ bool DX11Renderer::create_swap_chain(HWND hwnd)
 
 bool DX11Renderer::create_render_target_view()
 {
-    ComPtr<ID3D11Texture2D> backBuffer;
-    HRESULT hr = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+    ComPtr<ID3D11Texture2D> back_buffer;
+    HRESULT hr = m_swap_chain->GetBuffer(0, IID_PPV_ARGS(&back_buffer));
     if (FAILED(hr))
     {
         log_error("Failed to get back buffer: 0x%08X", hr);
         return false;
     }
 
-    hr = m_device->CreateRenderTargetView(backBuffer.Get(), nullptr, &m_render_target_view);
+    hr = m_device->CreateRenderTargetView(back_buffer.Get(), nullptr, &m_render_target_view);
     if (FAILED(hr))
     {
         log_error("CreateRenderTargetView failed with error: 0x%08X", hr);
@@ -296,45 +296,45 @@ bool DX11Renderer::create_render_target_view()
 
 bool DX11Renderer::create_depth_stencil_buffer()
 {
-    D3D11_TEXTURE2D_DESC depthBufferDesc = {};
-    depthBufferDesc.Width = m_size.x;
-    depthBufferDesc.Height = m_size.y;
-    depthBufferDesc.MipLevels = 1;
-    depthBufferDesc.ArraySize = 1;
-    depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depthBufferDesc.SampleDesc.Count = m_sample_count;
-    depthBufferDesc.SampleDesc.Quality = m_sample_count > 1 ? m_msaa_quality - 1 : 0;
-    depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    depthBufferDesc.CPUAccessFlags = 0;
-    depthBufferDesc.MiscFlags = 0;
+    D3D11_TEXTURE2D_DESC depth_buffer_desc = {};
+    depth_buffer_desc.Width = m_size.x;
+    depth_buffer_desc.Height = m_size.y;
+    depth_buffer_desc.MipLevels = 1;
+    depth_buffer_desc.ArraySize = 1;
+    depth_buffer_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depth_buffer_desc.SampleDesc.Count = m_sample_count;
+    depth_buffer_desc.SampleDesc.Quality = m_sample_count > 1 ? m_msaa_quality - 1 : 0;
+    depth_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+    depth_buffer_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depth_buffer_desc.CPUAccessFlags = 0;
+    depth_buffer_desc.MiscFlags = 0;
 
-    HRESULT hr = m_device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depth_stencil_buffer);
+    HRESULT hr = m_device->CreateTexture2D(&depth_buffer_desc, nullptr, &m_depth_stencil_buffer);
     if (FAILED(hr))
     {
         log_error("Failed to create depth stencil buffer: 0x%08X", hr);
         return false;
     }
 
-    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
-    depthStencilViewDesc.Format = depthBufferDesc.Format;
-    depthStencilViewDesc.ViewDimension = m_sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
-    depthStencilViewDesc.Texture2D.MipSlice = 0;
+    D3D11_DEPTH_STENCIL_VIEW_DESC depth_stencil_view_desc = {};
+    depth_stencil_view_desc.Format = depth_buffer_desc.Format;
+    depth_stencil_view_desc.ViewDimension = m_sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+    depth_stencil_view_desc.Texture2D.MipSlice = 0;
 
-    hr = m_device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), &depthStencilViewDesc, &m_depth_stencil_view);
+    hr = m_device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), &depth_stencil_view_desc, &m_depth_stencil_view);
     if (FAILED(hr))
     {
         log_error("CreateDepthStencilView failed with error: 0x%08X", hr);
         return false;
     }
 
-    D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-    depthStencilDesc.DepthEnable = TRUE;
-    depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-    depthStencilDesc.StencilEnable = FALSE;
+    D3D11_DEPTH_STENCIL_DESC depth_stencil_desc = {};
+    depth_stencil_desc.DepthEnable = TRUE;
+    depth_stencil_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depth_stencil_desc.DepthFunc = D3D11_COMPARISON_LESS;
+    depth_stencil_desc.StencilEnable = FALSE;
 
-    hr = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depth_stencil_state);
+    hr = m_device->CreateDepthStencilState(&depth_stencil_desc, &m_depth_stencil_state);
     if (FAILED(hr))
     {
         log_error("CreateDepthStencilState failed with error: 0x%08X", hr);
@@ -349,19 +349,19 @@ bool DX11Renderer::create_depth_stencil_buffer()
 
 bool DX11Renderer::create_rasterizer_state()
 {
-    D3D11_RASTERIZER_DESC rasterizerDesc = {};
-    rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-    rasterizerDesc.CullMode = D3D11_CULL_BACK;
-    rasterizerDesc.FrontCounterClockwise = FALSE;
-    rasterizerDesc.DepthBias = 0;
-    rasterizerDesc.DepthBiasClamp = 0.0f;
-    rasterizerDesc.SlopeScaledDepthBias = 0.0f;
-    rasterizerDesc.DepthClipEnable = TRUE;
-    rasterizerDesc.ScissorEnable = FALSE;
-    rasterizerDesc.MultisampleEnable = m_sample_count > 1;
-    rasterizerDesc.AntialiasedLineEnable = FALSE;
+    D3D11_RASTERIZER_DESC rasterizer_desc = {};
+    rasterizer_desc.FillMode = D3D11_FILL_SOLID;
+    rasterizer_desc.CullMode = D3D11_CULL_BACK;
+    rasterizer_desc.FrontCounterClockwise = FALSE;
+    rasterizer_desc.DepthBias = 0;
+    rasterizer_desc.DepthBiasClamp = 0.0f;
+    rasterizer_desc.SlopeScaledDepthBias = 0.0f;
+    rasterizer_desc.DepthClipEnable = TRUE;
+    rasterizer_desc.ScissorEnable = FALSE;
+    rasterizer_desc.MultisampleEnable = m_sample_count > 1;
+    rasterizer_desc.AntialiasedLineEnable = FALSE;
 
-    HRESULT hr = m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizer_state);
+    HRESULT hr = m_device->CreateRasterizerState(&rasterizer_desc, &m_rasterizer_state);
     if (FAILED(hr))
     {
         log_error("CreateRasterizerState failed with error: 0x%08X", hr);
@@ -376,25 +376,25 @@ bool DX11Renderer::create_rasterizer_state()
 
 bool DX11Renderer::create_blend_state()
 {
-    D3D11_BLEND_DESC blendDesc = {};
-    blendDesc.RenderTarget[0].BlendEnable = TRUE;
-    blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-    blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-    blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-    blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    D3D11_BLEND_DESC blend_desc = {};
+    blend_desc.RenderTarget[0].BlendEnable = TRUE;
+    blend_desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    blend_desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    blend_desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+    blend_desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+    blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+    blend_desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-    HRESULT hr = m_device->CreateBlendState(&blendDesc, &m_blend_state);
+    HRESULT hr = m_device->CreateBlendState(&blend_desc, &m_blend_state);
     if (FAILED(hr))
     {
         log_error("CreateBlendState failed with error: 0x%08X", hr);
         return false;
     }
 
-    float blendFactor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    m_context->OMSetBlendState(m_blend_state.Get(), blendFactor, 0xffffffff);
+    float blend_factor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    m_context->OMSetBlendState(m_blend_state.Get(), blend_factor, 0xffffffff);
 
     log_debug("Blend state created successfully");
     return true;
@@ -445,7 +445,7 @@ void DX11Renderer::end_frame()
     end_imgui_frame();
     render_imgui();
 
-    HRESULT hr = m_swapChain->Present(0, 0);
+    HRESULT hr = m_swap_chain->Present(0, 0);
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
     {
         log_error("Device lost during Present: 0x%08X", hr);
@@ -464,7 +464,7 @@ void DX11Renderer::on_resize(vec2_t<LONG> size)
     m_context->OMSetRenderTargets(0, nullptr, nullptr);
     release_render_targets();
 
-    HRESULT hr = m_swapChain->ResizeBuffers(0, size.x, size.y, DXGI_FORMAT_UNKNOWN, 0);
+    HRESULT hr = m_swap_chain->ResizeBuffers(0, size.x, size.y, DXGI_FORMAT_UNKNOWN, 0);
     if (FAILED(hr))
     {
         log_warning("ResizeBuffers failed with error: 0x%08X", hr);
@@ -488,17 +488,17 @@ void DX11Renderer::on_resize(vec2_t<LONG> size)
 
 HWND DX11Renderer::create_window(std::string title, vec2_t<LONG> size)
 {
-    const char *className = "DX11RendererWindow";
-    HINSTANCE hInstance = GetModuleHandle(nullptr);
+    const char *class_name = "DX11RendererWindow";
+    HINSTANCE h_instance = GetModuleHandle(nullptr);
 
     WNDCLASSEXA wc = {};
     wc.cbSize = sizeof(WNDCLASSEXA);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = window_proc_static;
-    wc.hInstance = hInstance;
+    wc.hInstance = h_instance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName = className;
+    wc.lpszClassName = class_name;
 
     if (!RegisterClassExA(&wc))
     {
@@ -512,7 +512,7 @@ HWND DX11Renderer::create_window(std::string title, vec2_t<LONG> size)
 
     HWND hwnd = CreateWindowExA(
         0,
-        className,
+        class_name,
         title.c_str(),
         WS_POPUP,
         0, 0,
@@ -520,7 +520,7 @@ HWND DX11Renderer::create_window(std::string title, vec2_t<LONG> size)
         size.y,
         nullptr,
         nullptr,
-        hInstance,
+        h_instance,
         this);
 
     if (!hwnd)
@@ -534,17 +534,17 @@ HWND DX11Renderer::create_window(std::string title, vec2_t<LONG> size)
 
 HWND DX11Renderer::create_overlay_window()
 {
-    const char *className = "DX11OverlayWindow";
-    HINSTANCE hInstance = GetModuleHandle(nullptr);
+    const char *class_name = "DX11OverlayWindow";
+    HINSTANCE h_instance = GetModuleHandle(nullptr);
 
     WNDCLASSEXA wc = {};
     wc.cbSize = sizeof(WNDCLASSEXA);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = window_proc_static;
-    wc.hInstance = hInstance;
+    wc.hInstance = h_instance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)0;
-    wc.lpszClassName = className;
+    wc.lpszClassName = class_name;
 
     if (!RegisterClassExA(&wc))
     {
@@ -558,7 +558,7 @@ HWND DX11Renderer::create_overlay_window()
 
     HWND hwnd = CreateWindowExA(
         WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
-        className,
+        class_name,
         "Overlay",
         WS_POPUP,
         m_target_rect.left,
@@ -567,7 +567,7 @@ HWND DX11Renderer::create_overlay_window()
         m_target_rect.bottom - m_target_rect.top,
         nullptr,
         nullptr,
-        hInstance,
+        h_instance,
         this);
 
     if (!hwnd)
@@ -584,7 +584,7 @@ void DX11Renderer::make_window_transparent(HWND hwnd) const
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
     DwmExtendFrameIntoClientArea(hwnd, &m_margins);
 
-    DWM_BLURBEHIND bb = {0};
+    DWM_BLURBEHIND bb = {};
     bb.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION;
     bb.fEnable = TRUE;
     bb.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
@@ -615,8 +615,8 @@ void DX11Renderer::update_overlay_position()
         if (memcmp(&new_rect, &m_target_rect, sizeof(RECT)) != 0)
         {
             m_target_rect = new_rect;
-            int width = new_rect.right - new_rect.left;
-            int height = new_rect.bottom - new_rect.top;
+            LONG width = new_rect.right - new_rect.left;
+            LONG height = new_rect.bottom - new_rect.top;
 
             SetWindowPos(m_hwnd, HWND_TOPMOST,
                          new_rect.left, new_rect.top, width, height,
@@ -638,12 +638,12 @@ void DX11Renderer::set_overlay_interactive(bool interactive) const
     if (!m_hwnd)
         return;
 
-    LONG exStyle = GetWindowLong(m_hwnd, GWL_EXSTYLE);
+    LONG ex_style = GetWindowLong(m_hwnd, GWL_EXSTYLE);
 
     if (interactive)
     {
-        exStyle &= ~WS_EX_TRANSPARENT;
-        SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
+        ex_style &= ~WS_EX_TRANSPARENT;
+        SetWindowLong(m_hwnd, GWL_EXSTYLE, ex_style);
 
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
@@ -654,8 +654,8 @@ void DX11Renderer::set_overlay_interactive(bool interactive) const
     }
     else
     {
-        exStyle |= WS_EX_TRANSPARENT;
-        SetWindowLong(m_hwnd, GWL_EXSTYLE, exStyle);
+        ex_style |= WS_EX_TRANSPARENT;
+        SetWindowLong(m_hwnd, GWL_EXSTYLE, ex_style);
 
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
@@ -672,8 +672,8 @@ LRESULT CALLBACK DX11Renderer::window_proc_static(HWND hwnd, UINT uMsg, WPARAM w
 
     if (uMsg == WM_CREATE)
     {
-        CREATESTRUCT *pCreate = reinterpret_cast<CREATESTRUCT *>(lParam);
-        renderer = reinterpret_cast<DX11Renderer *>(pCreate->lpCreateParams);
+        CREATESTRUCT *p_create = reinterpret_cast<CREATESTRUCT *>(lParam);
+        renderer = reinterpret_cast<DX11Renderer *>(p_create->lpCreateParams);
         SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(renderer));
     }
     else
@@ -707,8 +707,8 @@ LRESULT DX11Renderer::window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
     case WM_SIZE:
         if (m_initialized && wParam != SIZE_MINIMIZED)
         {
-            int width = LOWORD(lParam);
-            int height = HIWORD(lParam);
+            LONG width = LOWORD(lParam);
+            LONG height = HIWORD(lParam);
             on_resize(vec2_t<LONG>(width, height));
         }
         return 0;

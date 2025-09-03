@@ -78,8 +78,8 @@ private:
 
     ComPtr<ID3D11Device> m_device;
     ComPtr<ID3D11DeviceContext> m_context;
-    ComPtr<IDXGISwapChain1> m_swapChain;
-    ComPtr<IDXGIFactory2> m_dxgiFactory;
+    ComPtr<IDXGISwapChain1> m_swap_chain;
+    ComPtr<IDXGIFactory2> m_dxgi_factory;
 
     ComPtr<ID3D11RenderTargetView> m_render_target_view;
     ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
