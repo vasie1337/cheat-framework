@@ -14,21 +14,11 @@ bool DMAAccessAdapter::get_modules(std::vector<ProcessModule> &modules)
     return false;
 }
 
-bool DMAAccessAdapter::read(uintptr_t address, void *buffer, size_t size)
-{
-    return false;
-}
-
-bool DMAAccessAdapter::write(uintptr_t address, const void *buffer, size_t size)
-{
-    return false;
-}
-
-void DMAAccessAdapter::add_scatter_read(uintptr_t address, void *buffer, size_t size)
+void DMAAccessAdapter::add_scatter(uintptr_t address, void *buffer, size_t size)
 {
 }
 
-bool DMAAccessAdapter::execute_scatter_read()
+bool DMAAccessAdapter::execute_scatter()
 {
     return false;
 }

@@ -34,13 +34,9 @@ public:
 	// Modules
 	virtual bool get_modules(std::vector<ProcessModule> &modules) = 0;
 
-	// Memory
-	virtual bool read(uintptr_t address, void *buffer, size_t size) = 0;
-	virtual bool write(uintptr_t address, const void *buffer, size_t size) = 0;
-
     // Scatter reading operations
-	virtual void add_scatter_read(uintptr_t address, void *buffer, size_t size) = 0;
-	virtual bool execute_scatter_read() = 0;
+	virtual void add_scatter(uintptr_t address, void *buffer, size_t size) = 0;
+	virtual bool execute_scatter() = 0;
 
 protected:
 	// Internal scatter handle management
@@ -82,19 +78,5 @@ public:
 			}
 		}
 		return nullptr;
-	}
-
-	template <typename T>
-	T read(uintptr_t address) const
-	{
-		T value{};
-		read(address, &value, sizeof(T));
-		return value;
-	}
-
-	template <typename T>
-	void write(uintptr_t address, const T &value) const
-	{
-		write(address, &value, sizeof(T));
 	}
 };

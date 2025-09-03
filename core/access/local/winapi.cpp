@@ -80,30 +80,12 @@ bool WinApiAccessAdapter::get_modules(std::vector<ProcessModule> &modules)
     return true;
 }
 
-bool WinApiAccessAdapter::read(uintptr_t address, void *buffer, size_t size)
-{
-    if (ReadProcessMemory(m_process_handle, (LPCVOID)address, buffer, size, NULL))
-    {
-        return true;
-    }
-    return false;
-}
-
-bool WinApiAccessAdapter::write(uintptr_t address, const void *buffer, size_t size)
-{
-    if (WriteProcessMemory(m_process_handle, (LPVOID)address, buffer, size, NULL))
-    {
-        return true;
-    }
-    return false;
-}
-
 ScatterHandle WinApiAccessAdapter::create_scatter_handle()
 {
     return new WinApiScatterHandle();
 }
 
-void WinApiAccessAdapter::add_scatter_read(uintptr_t address, void *buffer, size_t size)
+void WinApiAccessAdapter::add_scatter(uintptr_t address, void *buffer, size_t size)
 {
     initialize_scatter_handle();
     if (m_scatter_handle == nullptr)
@@ -117,7 +99,7 @@ void WinApiAccessAdapter::add_scatter_read(uintptr_t address, void *buffer, size
     scatterHandle->entries.push_back(entry);
 }
 
-bool WinApiAccessAdapter::execute_scatter_read()
+bool WinApiAccessAdapter::execute_scatter()
 {
     if (m_scatter_handle == nullptr)
         return false;
