@@ -53,16 +53,16 @@ bool Core::initialize()
 
 bool Core::update()
 {
-	if (!m_renderer || !m_renderer->isInitialized())
+	if (!m_renderer || !m_renderer->is_initialized())
 		return false;
 
-	if (!m_renderer->processMessages())
+	if (!m_renderer->process_messages())
 		return false;
 
 	if (GetAsyncKeyState(VK_INSERT) & 1)
 	{
 		m_show_widgets = !m_show_widgets;
-		m_renderer->setOverlayInteractive(m_show_widgets);
+		m_renderer->set_overlay_interactive(m_show_widgets);
 	}
 
 	if (GetAsyncKeyState(VK_END) & 1)
@@ -70,7 +70,7 @@ bool Core::update()
 		return false;
 	}
 
-	m_renderer->beginFrame(0.0f, 0.0f, 0.0f, 0.0f);
+	m_renderer->begin_frame(0.0f, 0.0f, 0.0f, 0.0f);
 
 	for (auto& callback : m_callbacks)
 	{
@@ -88,7 +88,7 @@ bool Core::update()
 		ImGui::End();
 	}
 
-	m_renderer->endFrame();
+	m_renderer->end_frame();
 
 	return true;
 }

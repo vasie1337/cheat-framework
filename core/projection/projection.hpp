@@ -33,7 +33,7 @@ public:
             return false;
         
         const T invW = T{1} / clipW;
-        const auto screenSize = m_renderer->getSize();
+        const auto screenSize = m_renderer->get_size();
         
         screenPos.x = (clipX * invW + T{1}) * screenSize.x * T{0.5};
         screenPos.y = (T{1} - clipY * invW) * screenSize.y * T{0.5};
@@ -65,7 +65,7 @@ public:
             return false;
         
         const T invW = T{1} / clipW;
-        const auto screenSize = m_renderer->getSize();
+        const auto screenSize = m_renderer->get_size();
         
         screenPos.x = (clipX * invW + T{1}) * screenSize.x * T{0.5};
         screenPos.y = (T{1} - clipY * invW) * screenSize.y * T{0.5};
@@ -108,7 +108,7 @@ public:
             return false;
         
         const T invW = T{1} / clipPos.w;
-        const auto screenSize = m_renderer->getSize();
+        const auto screenSize = m_renderer->get_size();
         
         screenPos.x = (clipPos.x * invW + T{1}) * screenSize.x * T{0.5};
         screenPos.y = (clipPos.y * invW + T{1}) * screenSize.y * T{0.5};

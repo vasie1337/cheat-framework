@@ -31,84 +31,80 @@ public:
 
     void shutdown();
 
-    bool initializeImGui();
-    void shutdownImGui();
+    bool initialize_imgui();
+    void shutdown_imGui();
 
-    void beginImGuiFrame() const;
-    void endImGuiFrame() const;
-    void renderImGui() const;
+    void begin_imgui_frame() const;
+    void end_imgui_frame() const;
+    void render_imgui() const;
 
-    void beginFrame(float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
-    void endFrame();
+    void begin_frame(float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
+    void end_frame();
 
-    void onResize(vec2_t<LONG> size);
+    void on_resize(vec2_t<LONG> size);
 
-    bool processMessages();
+    bool process_messages();
 
-    HWND getWindow() const { return m_hwnd; }
-    ID3D11Device *getDevice() const { return m_device.Get(); }
-    ID3D11DeviceContext *getContext() const { return m_context.Get(); }
-    ID3D11RenderTargetView *getRenderTargetView() const { return m_renderTargetView.Get(); }
-    ID3D11DepthStencilView *getDepthStencilView() const { return m_depthStencilView.Get(); }
+    HWND get_window() const { return m_hwnd; }
+    ID3D11Device *get_device() const { return m_device.Get(); }
+    ID3D11DeviceContext *get_context() const { return m_context.Get(); }
+    ID3D11RenderTargetView *get_render_target_view() const { return m_render_target_view.Get(); }
+    ID3D11DepthStencilView *get_depth_stencil_view() const { return m_depth_stencil_view.Get(); }
 
-    vec2_t<LONG> getSize() const { return m_size; }
+    vec2_t<LONG> get_size() const { return m_size; }
 
-    bool isInitialized() const { return m_initialized; }
-    bool isVSyncEnabled() const { return m_vsyncEnabled; }
-    void setVSync(bool enabled) { m_vsyncEnabled = enabled; }
+    bool is_initialized() const { return m_initialized; }
+    bool is_vsync_enabled() const { return m_vsync_enabled; }
+    void set_vsync(bool enabled) { m_vsync_enabled = enabled; }
 
-    bool isBorderlessFullscreen() const { return m_borderlessFullscreen; }
-    void setBorderlessFullscreen(bool enabled);
-
-    void updateOverlayPosition();
-    void setOverlayInteractive(bool interactive) const;
-    HWND getTargetWindow() const { return m_targetHwnd; }
+    void update_overlay_position();
+    void set_overlay_interactive(bool interactive) const;
+    HWND get_target_window() const { return m_target_hwnd; }
 
 private:
-    bool createDevice();
-    bool createSwapChain(HWND hwnd);
-    bool createRenderTargetView();
-    bool createDepthStencilBuffer();
-    bool createRasterizerState();
-    bool createBlendState();
-    void setViewport();
+    bool create_device();
+    bool create_swap_chain(HWND hwnd);
+    bool create_render_target_view();
+    bool create_depth_stencil_buffer();
+    bool create_rasterizer_state();
+    bool create_blend_state();
+    void set_viewport();
 
-    void releaseRenderTargets();
+    void release_render_targets();
 
-    HWND createWindow(const char *title, vec2_t<LONG> size);
-    HWND createOverlayWindow();
-    void makeWindowTransparent(HWND hwnd) const;
-    HWND findTargetWindow(const char *windowTitle, const char *windowClass);
-    static LRESULT CALLBACK windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    LRESULT windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    HWND create_window(const char *title, vec2_t<LONG> size);
+    HWND create_overlay_window();
+    void make_window_transparent(HWND hwnd) const;
+    HWND find_target_window(const char *windowTitle, const char *windowClass);
+    static LRESULT CALLBACK window_proc_static(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     ComPtr<ID3D11Device> m_device;
     ComPtr<ID3D11DeviceContext> m_context;
     ComPtr<IDXGISwapChain1> m_swapChain;
     ComPtr<IDXGIFactory2> m_dxgiFactory;
 
-    ComPtr<ID3D11RenderTargetView> m_renderTargetView;
-    ComPtr<ID3D11Texture2D> m_depthStencilBuffer;
-    ComPtr<ID3D11DepthStencilView> m_depthStencilView;
-    ComPtr<ID3D11DepthStencilState> m_depthStencilState;
+    ComPtr<ID3D11RenderTargetView> m_render_target_view;
+    ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
+    ComPtr<ID3D11DepthStencilView> m_depth_stencil_view;
+    ComPtr<ID3D11DepthStencilState> m_depth_stencil_state;
 
-    ComPtr<ID3D11RasterizerState> m_rasterizerState;
-    ComPtr<ID3D11BlendState> m_blendState;
+    ComPtr<ID3D11RasterizerState> m_rasterizer_state;
+    ComPtr<ID3D11BlendState> m_blend_state;
 
     HWND m_hwnd;
     vec2_t<LONG> m_size;
-    bool m_borderlessFullscreen;
-    bool m_vsyncEnabled;
+    bool m_vsync_enabled;
     bool m_initialized;
-    bool m_imguiInitialized;
-    bool m_shouldClose;
+    bool m_imgui_initialized;
+    bool m_should_close;
 
-    D3D_FEATURE_LEVEL m_featureLevel;
-    DXGI_FORMAT m_backBufferFormat;
-    UINT m_msaaQuality;
-    UINT m_sampleCount;
+    D3D_FEATURE_LEVEL m_feature_level;
+    DXGI_FORMAT m_back_buffer_format;
+    UINT m_msaa_quality;
+    UINT m_sample_count;
 
-    HWND m_targetHwnd;
-    RECT m_targetRect;
+    HWND m_target_hwnd;
+    RECT m_target_rect;
     MARGINS m_margins;
 };

@@ -10,9 +10,9 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DX11Renderer::DX11Renderer()
-    : m_hwnd(nullptr), m_size(0, 0), m_borderlessFullscreen(false), m_vsyncEnabled(false), m_initialized(false), m_shouldClose(false), m_featureLevel(D3D_FEATURE_LEVEL_11_0), m_backBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM), m_msaaQuality(0), m_sampleCount(1), m_targetHwnd(nullptr), m_imguiInitialized(false)
+    : m_hwnd(nullptr), m_size(0, 0), m_vsync_enabled(false), m_initialized(false), m_should_close(false), m_feature_level(D3D_FEATURE_LEVEL_11_0), m_back_buffer_format(DXGI_FORMAT_R8G8B8A8_UNORM), m_msaa_quality(0), m_sample_count(1), m_target_hwnd(nullptr), m_imgui_initialized(false)
 {
-    m_targetRect = {0, 0, 0, 0};
+    m_target_rect = {0, 0, 0, 0};
     m_margins = {-1, -1, -1, -1};
 }
 
@@ -29,30 +29,28 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
         return true;
     }
 
-    m_borderlessFullscreen = borderlessFullscreen;
-    bool isOverlay = (targetWindowTitle != nullptr);
+    bool is_overlay = (targetWindowTitle != nullptr);
 
-    if (isOverlay)
+    if (is_overlay)
     {
-        // Overlay mode - find target window and create overlay
-        m_targetHwnd = findTargetWindow(targetWindowTitle, targetWindowClass);
-        if (!m_targetHwnd)
+        m_target_hwnd = find_target_window(targetWindowTitle, targetWindowClass);
+        if (!m_target_hwnd)
         {
             log_error("Failed to find target window: %s", targetWindowTitle);
             return false;
         }
 
-        if (!GetWindowRect(m_targetHwnd, &m_targetRect))
+        if (!GetWindowRect(m_target_hwnd, &m_target_rect))
         {
             log_error("Failed to get target window rect");
             return false;
         }
 
-        m_size = vec2_t<LONG>(m_targetRect.right - m_targetRect.left, m_targetRect.bottom - m_targetRect.top);
+        m_size = vec2_t<LONG>(m_target_rect.right - m_target_rect.left, m_target_rect.bottom - m_target_rect.top);
 
         log_debug("Creating overlay window (%ix%i)", m_size.x, m_size.y);
 
-        m_hwnd = createOverlayWindow();
+        m_hwnd = create_overlay_window();
         if (!m_hwnd)
         {
             log_error("Failed to create overlay window");
@@ -61,10 +59,9 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
     }
     else
     {
-        // Regular window mode
         m_size = vec2_t<LONG>(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
-        m_hwnd = createWindow(windowTitle, m_size);
+        m_hwnd = create_window(windowTitle, m_size);
         if (!m_hwnd)
         {
             log_error("Failed to create window");
@@ -77,60 +74,58 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
         log_debug("Initializing DirectX 11 Renderer (%ix%i)", m_size.x, m_size.y);
     }
 
-    // Common initialization for both modes
-    if (!createDevice())
+    if (!create_device())
     {
         log_error("Failed to create D3D11 device");
         return false;
     }
 
-    if (!createSwapChain(m_hwnd))
+    if (!create_swap_chain(m_hwnd))
     {
         log_error("Failed to create swap chain");
         return false;
     }
 
-    if (!createRenderTargetView())
+    if (!create_render_target_view())
     {
         log_error("Failed to create render target view");
         return false;
     }
 
-    if (!createDepthStencilBuffer())
+    if (!create_depth_stencil_buffer())
     {
         log_error("Failed to create depth stencil buffer");
         return false;
     }
 
-    if (!createRasterizerState())
+    if (!create_rasterizer_state())
     {
         log_error("Failed to create rasterizer state");
         return false;
     }
 
-    if (!createBlendState())
+    if (!create_blend_state())
     {
         log_error("Failed to create blend state");
         return false;
     }
 
-    setViewport();
+    set_viewport();
 
-    if (isOverlay)
+    if (is_overlay)
     {
-        // Overlay-specific finalization
-        makeWindowTransparent(m_hwnd);
+        make_window_transparent(m_hwnd);
         ShowWindow(m_hwnd, SW_SHOW);
         UpdateWindow(m_hwnd);
     }
 
-    if (!initializeImGui())
+    if (!initialize_imgui())
     {
         log_warning("Failed to initialize ImGui");
     }
 
     m_initialized = true;
-    log_debug("%s renderer initialized successfully", isOverlay ? "Overlay" : "DirectX 11");
+    log_debug("%s renderer initialized successfully", is_overlay ? "Overlay" : "DirectX 11");
     return true;
 }
 
@@ -141,7 +136,7 @@ void DX11Renderer::shutdown()
 
     log_debug("Shutting down DirectX 11 Renderer");
 
-    shutdownImGui();
+    shutdown_imGui();
 
     if (m_context)
     {
@@ -149,11 +144,11 @@ void DX11Renderer::shutdown()
         m_context->Flush();
     }
 
-    releaseRenderTargets();
+    release_render_targets();
 
-    m_blendState.Reset();
-    m_rasterizerState.Reset();
-    m_depthStencilState.Reset();
+    m_blend_state.Reset();
+    m_rasterizer_state.Reset();
+    m_depth_stencil_state.Reset();
     m_swapChain.Reset();
     m_dxgiFactory.Reset();
     m_context.Reset();
@@ -168,7 +163,7 @@ void DX11Renderer::shutdown()
     m_initialized = false;
 }
 
-bool DX11Renderer::createDevice()
+bool DX11Renderer::create_device()
 {
     UINT createDeviceFlags = 0;
 #ifdef _DEBUG
@@ -192,7 +187,7 @@ bool DX11Renderer::createDevice()
         ARRAYSIZE(featureLevels),
         D3D11_SDK_VERSION,
         &m_device,
-        &m_featureLevel,
+        &m_feature_level,
         &m_context);
 
     if (FAILED(hr))
@@ -224,30 +219,30 @@ bool DX11Renderer::createDevice()
         return false;
     }
 
-    hr = m_device->CheckMultisampleQualityLevels(m_backBufferFormat, 4, &m_msaaQuality);
-    if (SUCCEEDED(hr) && m_msaaQuality > 0)
+    hr = m_device->CheckMultisampleQualityLevels(m_back_buffer_format, 4, &m_msaa_quality);
+    if (SUCCEEDED(hr) && m_msaa_quality > 0)
     {
-        m_sampleCount = 4;
-        log_debug("4x MSAA supported with quality level: %i", m_msaaQuality - 1);
+        m_sample_count = 4;
+        log_debug("4x MSAA supported with quality level: %i", m_msaa_quality - 1);
     }
     else
     {
-        m_sampleCount = 1;
+        m_sample_count = 1;
         log_debug("MSAA not supported, using no anti-aliasing");
     }
 
-    log_debug("D3D11 device created with feature level: 0x%04X", m_featureLevel);
+    log_debug("D3D11 device created with feature level: 0x%04X", m_feature_level);
     return true;
 }
 
-bool DX11Renderer::createSwapChain(HWND hwnd)
+bool DX11Renderer::create_swap_chain(HWND hwnd)
 {
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
     swapChainDesc.Width = m_size.x;
     swapChainDesc.Height = m_size.y;
-    swapChainDesc.Format = m_backBufferFormat;
-    swapChainDesc.SampleDesc.Count = m_sampleCount;
-    swapChainDesc.SampleDesc.Quality = m_sampleCount > 1 ? m_msaaQuality - 1 : 0;
+    swapChainDesc.Format = m_back_buffer_format;
+    swapChainDesc.SampleDesc.Count = m_sample_count;
+    swapChainDesc.SampleDesc.Quality = m_sample_count > 1 ? m_msaa_quality - 1 : 0;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = 2;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -278,7 +273,7 @@ bool DX11Renderer::createSwapChain(HWND hwnd)
     return true;
 }
 
-bool DX11Renderer::createRenderTargetView()
+bool DX11Renderer::create_render_target_view()
 {
     ComPtr<ID3D11Texture2D> backBuffer;
     HRESULT hr = m_swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
@@ -288,7 +283,7 @@ bool DX11Renderer::createRenderTargetView()
         return false;
     }
 
-    hr = m_device->CreateRenderTargetView(backBuffer.Get(), nullptr, &m_renderTargetView);
+    hr = m_device->CreateRenderTargetView(backBuffer.Get(), nullptr, &m_render_target_view);
     if (FAILED(hr))
     {
         log_error("CreateRenderTargetView failed with error: 0x%08X", hr);
@@ -299,7 +294,7 @@ bool DX11Renderer::createRenderTargetView()
     return true;
 }
 
-bool DX11Renderer::createDepthStencilBuffer()
+bool DX11Renderer::create_depth_stencil_buffer()
 {
     D3D11_TEXTURE2D_DESC depthBufferDesc = {};
     depthBufferDesc.Width = m_size.x;
@@ -307,14 +302,14 @@ bool DX11Renderer::createDepthStencilBuffer()
     depthBufferDesc.MipLevels = 1;
     depthBufferDesc.ArraySize = 1;
     depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    depthBufferDesc.SampleDesc.Count = m_sampleCount;
-    depthBufferDesc.SampleDesc.Quality = m_sampleCount > 1 ? m_msaaQuality - 1 : 0;
+    depthBufferDesc.SampleDesc.Count = m_sample_count;
+    depthBufferDesc.SampleDesc.Quality = m_sample_count > 1 ? m_msaa_quality - 1 : 0;
     depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
     depthBufferDesc.CPUAccessFlags = 0;
     depthBufferDesc.MiscFlags = 0;
 
-    HRESULT hr = m_device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer);
+    HRESULT hr = m_device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depth_stencil_buffer);
     if (FAILED(hr))
     {
         log_error("Failed to create depth stencil buffer: 0x%08X", hr);
@@ -323,10 +318,10 @@ bool DX11Renderer::createDepthStencilBuffer()
 
     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
     depthStencilViewDesc.Format = depthBufferDesc.Format;
-    depthStencilViewDesc.ViewDimension = m_sampleCount > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+    depthStencilViewDesc.ViewDimension = m_sample_count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
     depthStencilViewDesc.Texture2D.MipSlice = 0;
 
-    hr = m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &depthStencilViewDesc, &m_depthStencilView);
+    hr = m_device->CreateDepthStencilView(m_depth_stencil_buffer.Get(), &depthStencilViewDesc, &m_depth_stencil_view);
     if (FAILED(hr))
     {
         log_error("CreateDepthStencilView failed with error: 0x%08X", hr);
@@ -339,20 +334,20 @@ bool DX11Renderer::createDepthStencilBuffer()
     depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
     depthStencilDesc.StencilEnable = FALSE;
 
-    hr = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
+    hr = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depth_stencil_state);
     if (FAILED(hr))
     {
         log_error("CreateDepthStencilState failed with error: 0x%08X", hr);
         return false;
     }
 
-    m_context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
+    m_context->OMSetDepthStencilState(m_depth_stencil_state.Get(), 0);
 
     log_debug("Depth stencil buffer created successfully");
     return true;
 }
 
-bool DX11Renderer::createRasterizerState()
+bool DX11Renderer::create_rasterizer_state()
 {
     D3D11_RASTERIZER_DESC rasterizerDesc = {};
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
@@ -363,23 +358,23 @@ bool DX11Renderer::createRasterizerState()
     rasterizerDesc.SlopeScaledDepthBias = 0.0f;
     rasterizerDesc.DepthClipEnable = TRUE;
     rasterizerDesc.ScissorEnable = FALSE;
-    rasterizerDesc.MultisampleEnable = m_sampleCount > 1;
+    rasterizerDesc.MultisampleEnable = m_sample_count > 1;
     rasterizerDesc.AntialiasedLineEnable = FALSE;
 
-    HRESULT hr = m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizerState);
+    HRESULT hr = m_device->CreateRasterizerState(&rasterizerDesc, &m_rasterizer_state);
     if (FAILED(hr))
     {
         log_error("CreateRasterizerState failed with error: 0x%08X", hr);
         return false;
     }
 
-    m_context->RSSetState(m_rasterizerState.Get());
+    m_context->RSSetState(m_rasterizer_state.Get());
 
     log_debug("Rasterizer state created successfully");
     return true;
 }
 
-bool DX11Renderer::createBlendState()
+bool DX11Renderer::create_blend_state()
 {
     D3D11_BLEND_DESC blendDesc = {};
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
@@ -391,7 +386,7 @@ bool DX11Renderer::createBlendState()
     blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-    HRESULT hr = m_device->CreateBlendState(&blendDesc, &m_blendState);
+    HRESULT hr = m_device->CreateBlendState(&blendDesc, &m_blend_state);
     if (FAILED(hr))
     {
         log_error("CreateBlendState failed with error: 0x%08X", hr);
@@ -399,13 +394,13 @@ bool DX11Renderer::createBlendState()
     }
 
     float blendFactor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    m_context->OMSetBlendState(m_blendState.Get(), blendFactor, 0xffffffff);
+    m_context->OMSetBlendState(m_blend_state.Get(), blendFactor, 0xffffffff);
 
     log_debug("Blend state created successfully");
     return true;
 }
 
-void DX11Renderer::setViewport()
+void DX11Renderer::set_viewport()
 {
     D3D11_VIEWPORT viewport = {};
     viewport.TopLeftX = 0.0f;
@@ -416,41 +411,41 @@ void DX11Renderer::setViewport()
     viewport.MaxDepth = 1.0f;
 
     m_context->RSSetViewports(1, &viewport);
-    m_context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
+    m_context->OMSetRenderTargets(1, m_render_target_view.GetAddressOf(), m_depth_stencil_view.Get());
 
     log_debug("Viewport set to %ix%i", m_size.x, m_size.y);
 }
 
-void DX11Renderer::releaseRenderTargets()
+void DX11Renderer::release_render_targets()
 {
-    m_renderTargetView.Reset();
-    m_depthStencilView.Reset();
-    m_depthStencilBuffer.Reset();
+    m_render_target_view.Reset();
+    m_depth_stencil_view.Reset();
+    m_depth_stencil_buffer.Reset();
 }
 
-void DX11Renderer::beginFrame(float r, float g, float b, float a)
+void DX11Renderer::begin_frame(float r, float g, float b, float a)
 {
     if (!m_initialized)
         return;
 
-    updateOverlayPosition();
+    update_overlay_position();
 
     float clearColor[4] = {r, g, b, a};
-    m_context->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
-    m_context->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    m_context->ClearRenderTargetView(m_render_target_view.Get(), clearColor);
+    m_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-    beginImGuiFrame();
+    begin_imgui_frame();
 }
 
-void DX11Renderer::endFrame()
+void DX11Renderer::end_frame()
 {
     if (!m_initialized)
         return;
 
-    endImGuiFrame();
-    renderImGui();
+    end_imgui_frame();
+    render_imgui();
 
-    UINT syncInterval = m_vsyncEnabled ? 1 : 0;
+    UINT syncInterval = m_vsync_enabled ? 1 : 0;
     HRESULT hr = m_swapChain->Present(syncInterval, 0);
 
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
@@ -459,7 +454,7 @@ void DX11Renderer::endFrame()
     }
 }
 
-void DX11Renderer::onResize(vec2_t<LONG> size)
+void DX11Renderer::on_resize(vec2_t<LONG> size)
 {
     if (!m_initialized || (size == m_size))
         return;
@@ -469,7 +464,7 @@ void DX11Renderer::onResize(vec2_t<LONG> size)
     m_size = size;
 
     m_context->OMSetRenderTargets(0, nullptr, nullptr);
-    releaseRenderTargets();
+    release_render_targets();
 
     HRESULT hr = m_swapChain->ResizeBuffers(0, size.x, size.y, DXGI_FORMAT_UNKNOWN, 0);
     if (FAILED(hr))
@@ -478,22 +473,22 @@ void DX11Renderer::onResize(vec2_t<LONG> size)
         return;
     }
 
-    if (!createRenderTargetView())
+    if (!create_render_target_view())
     {
         log_warning("Failed to recreate render target view after resize");
         return;
     }
 
-    if (!createDepthStencilBuffer())
+    if (!create_depth_stencil_buffer())
     {
         log_warning("Failed to recreate depth stencil buffer after resize");
         return;
     }
 
-    setViewport();
+    set_viewport();
 }
 
-HWND DX11Renderer::createWindow(const char *title, vec2_t<LONG> size)
+HWND DX11Renderer::create_window(const char *title, vec2_t<LONG> size)
 {
     const char *className = "DX11RendererWindow";
     HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -501,7 +496,7 @@ HWND DX11Renderer::createWindow(const char *title, vec2_t<LONG> size)
     WNDCLASSEXA wc = {};
     wc.cbSize = sizeof(WNDCLASSEXA);
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = windowProcStatic;
+    wc.lpfnWndProc = window_proc_static;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
@@ -517,34 +512,14 @@ HWND DX11Renderer::createWindow(const char *title, vec2_t<LONG> size)
         }
     }
 
-    DWORD windowStyle;
-    DWORD exStyle = 0;
-    vec2_t<LONG> windowSize;
-    vec2_t<LONG> windowPosition;
-
-    if (m_borderlessFullscreen)
-    {
-        windowStyle = WS_POPUP;
-        windowPosition = vec2_t<LONG>(0, 0);
-        windowSize = size;
-    }
-    else
-    {
-        windowStyle = WS_OVERLAPPEDWINDOW;
-        RECT rect = {0, 0, size.x, size.y};
-        AdjustWindowRect(&rect, windowStyle, FALSE);
-        windowPosition = vec2_t<LONG>(CW_USEDEFAULT, CW_USEDEFAULT);
-        windowSize = vec2_t<LONG>(rect.right - rect.left, rect.bottom - rect.top);
-    }
-
     HWND hwnd = CreateWindowExA(
-        exStyle,
+        0,
         className,
         title,
-        windowStyle,
-        windowPosition.x, windowPosition.y,
-        windowSize.x,
-        windowSize.y,
+        WS_POPUP,
+        0, 0,
+        size.x,
+        size.y,
         nullptr,
         nullptr,
         hInstance,
@@ -559,7 +534,7 @@ HWND DX11Renderer::createWindow(const char *title, vec2_t<LONG> size)
     return hwnd;
 }
 
-HWND DX11Renderer::createOverlayWindow()
+HWND DX11Renderer::create_overlay_window()
 {
     const char *className = "DX11OverlayWindow";
     HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -567,7 +542,7 @@ HWND DX11Renderer::createOverlayWindow()
     WNDCLASSEXA wc = {};
     wc.cbSize = sizeof(WNDCLASSEXA);
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = windowProcStatic;
+    wc.lpfnWndProc = window_proc_static;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)0;
@@ -588,10 +563,10 @@ HWND DX11Renderer::createOverlayWindow()
         className,
         "Overlay",
         WS_POPUP,
-        m_targetRect.left,
-        m_targetRect.top,
-        m_targetRect.right - m_targetRect.left,
-        m_targetRect.bottom - m_targetRect.top,
+        m_target_rect.left,
+        m_target_rect.top,
+        m_target_rect.right - m_target_rect.left,
+        m_target_rect.bottom - m_target_rect.top,
         nullptr,
         nullptr,
         hInstance,
@@ -606,7 +581,7 @@ HWND DX11Renderer::createOverlayWindow()
     return hwnd;
 }
 
-void DX11Renderer::makeWindowTransparent(HWND hwnd) const
+void DX11Renderer::make_window_transparent(HWND hwnd) const
 {
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
     DwmExtendFrameIntoClientArea(hwnd, &m_margins);
@@ -619,7 +594,7 @@ void DX11Renderer::makeWindowTransparent(HWND hwnd) const
     DeleteObject(bb.hRgnBlur);
 }
 
-HWND DX11Renderer::findTargetWindow(const char *windowTitle, const char *windowClass)
+HWND DX11Renderer::find_target_window(const char *windowTitle, const char *windowClass)
 {
     HWND hwnd = nullptr;
 
@@ -657,34 +632,34 @@ HWND DX11Renderer::findTargetWindow(const char *windowTitle, const char *windowC
     return hwnd;
 }
 
-void DX11Renderer::updateOverlayPosition()
+void DX11Renderer::update_overlay_position()
 {
-    if (!m_targetHwnd || !m_hwnd)
+    if (!m_target_hwnd || !m_hwnd)
         return;
 
-    if (!IsWindow(m_targetHwnd))
+    if (!IsWindow(m_target_hwnd))
     {
         log_warning("Target window no longer exists");
-        m_shouldClose = true;
+        m_should_close = true;
         return;
     }
 
-    RECT newRect;
-    if (GetWindowRect(m_targetHwnd, &newRect))
+    RECT new_rect;
+    if (GetWindowRect(m_target_hwnd, &new_rect))
     {
-        if (memcmp(&newRect, &m_targetRect, sizeof(RECT)) != 0)
+        if (memcmp(&new_rect, &m_target_rect, sizeof(RECT)) != 0)
         {
-            m_targetRect = newRect;
-            int width = newRect.right - newRect.left;
-            int height = newRect.bottom - newRect.top;
+            m_target_rect = new_rect;
+            int width = new_rect.right - new_rect.left;
+            int height = new_rect.bottom - new_rect.top;
 
             SetWindowPos(m_hwnd, HWND_TOPMOST,
-                         newRect.left, newRect.top, width, height,
+                         new_rect.left, new_rect.top, width, height,
                          SWP_NOACTIVATE);
 
             if (width != m_size.x || height != m_size.y)
             {
-                onResize(vec2_t<LONG>(width, height));
+                on_resize(vec2_t<LONG>(width, height));
             }
         }
     }
@@ -693,7 +668,7 @@ void DX11Renderer::updateOverlayPosition()
                  SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }
 
-void DX11Renderer::setOverlayInteractive(bool interactive) const
+void DX11Renderer::set_overlay_interactive(bool interactive) const
 {
     if (!m_hwnd)
         return;
@@ -720,13 +695,13 @@ void DX11Renderer::setOverlayInteractive(bool interactive) const
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 
-        SetForegroundWindow(m_targetHwnd);
+        SetForegroundWindow(m_target_hwnd);
 
         log_debug("Overlay set to click-through mode");
     }
 }
 
-LRESULT CALLBACK DX11Renderer::windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK DX11Renderer::window_proc_static(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     DX11Renderer *renderer = nullptr;
 
@@ -743,15 +718,15 @@ LRESULT CALLBACK DX11Renderer::windowProcStatic(HWND hwnd, UINT uMsg, WPARAM wPa
 
     if (renderer)
     {
-        return renderer->windowProc(hwnd, uMsg, wParam, lParam);
+        return renderer->window_proc(hwnd, uMsg, wParam, lParam);
     }
 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT DX11Renderer::window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    if (m_imguiInitialized)
+    if (m_imgui_initialized)
     {
         if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
             return true;
@@ -760,7 +735,7 @@ LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     switch (uMsg)
     {
     case WM_DESTROY:
-        m_shouldClose = true;
+        m_should_close = true;
         PostQuitMessage(0);
         return 0;
 
@@ -769,14 +744,14 @@ LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         {
             int width = LOWORD(lParam);
             int height = HIWORD(lParam);
-            onResize(vec2_t<LONG>(width, height));
+            on_resize(vec2_t<LONG>(width, height));
         }
         return 0;
 
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE)
         {
-            m_shouldClose = true;
+            m_should_close = true;
             PostQuitMessage(0);
         }
         return 0;
@@ -785,26 +760,26 @@ LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-bool DX11Renderer::processMessages()
+bool DX11Renderer::process_messages()
 {
     MSG msg = {};
     while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
     {
         if (msg.message == WM_QUIT)
         {
-            m_shouldClose = true;
+            m_should_close = true;
             return false;
         }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 
-    return !m_shouldClose;
+    return !m_should_close;
 }
 
-bool DX11Renderer::initializeImGui()
+bool DX11Renderer::initialize_imgui()
 {
-    if (m_imguiInitialized)
+    if (m_imgui_initialized)
         return true;
 
     IMGUI_CHECKVERSION();
@@ -829,27 +804,27 @@ bool DX11Renderer::initializeImGui()
         return false;
     }
 
-    m_imguiInitialized = true;
+    m_imgui_initialized = true;
     log_debug("ImGui initialized successfully");
     return true;
 }
 
-void DX11Renderer::shutdownImGui()
+void DX11Renderer::shutdown_imGui()
 {
-    if (!m_imguiInitialized)
+    if (!m_imgui_initialized)
         return;
 
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
-    m_imguiInitialized = false;
+    m_imgui_initialized = false;
     log_debug("ImGui shut down");
 }
 
-void DX11Renderer::beginImGuiFrame() const
+void DX11Renderer::begin_imgui_frame() const
 {
-    if (!m_imguiInitialized)
+    if (!m_imgui_initialized)
         return;
 
     ImGui_ImplDX11_NewFrame();
@@ -857,68 +832,18 @@ void DX11Renderer::beginImGuiFrame() const
     ImGui::NewFrame();
 }
 
-void DX11Renderer::endImGuiFrame() const
+void DX11Renderer::end_imgui_frame() const
 {
-    if (!m_imguiInitialized)
+    if (!m_imgui_initialized)
         return;
 
     ImGui::Render();
 }
 
-void DX11Renderer::renderImGui() const
+void DX11Renderer::render_imgui() const
 {
-    if (!m_imguiInitialized)
+    if (!m_imgui_initialized)
         return;
 
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-}
-
-void DX11Renderer::setBorderlessFullscreen(bool enabled)
-{
-    if (m_borderlessFullscreen == enabled || !m_hwnd)
-        return;
-
-    m_borderlessFullscreen = enabled;
-
-    if (enabled)
-    {
-        SetWindowLong(m_hwnd, GWL_STYLE, WS_POPUP);
-
-        int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-        int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-        SetWindowPos(m_hwnd, HWND_TOP, 0, 0, screenWidth, screenHeight,
-                     SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-
-        if (screenWidth != m_size.x || screenHeight != m_size.y)
-        {
-            onResize(vec2_t<LONG>(screenWidth, screenHeight));
-        }
-    }
-    else
-    {
-        SetWindowLong(m_hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-
-        int windowWidth = 1280;
-        int windowHeight = 720;
-        int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-        int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-        int x = (screenWidth - windowWidth) / 2;
-        int y = (screenHeight - windowHeight) / 2;
-
-        RECT rect = {0, 0, windowWidth, windowHeight};
-        AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
-        windowWidth = rect.right - rect.left;
-        windowHeight = rect.bottom - rect.top;
-
-        SetWindowPos(m_hwnd, HWND_TOP, x, y, windowWidth, windowHeight,
-                     SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-
-        if (1280 != m_size.x || 720 != m_size.y)
-        {
-            onResize(vec2_t<LONG>(1280, 720));
-        }
-    }
-
-    log_info("Switched to %s mode", enabled ? "borderless fullscreen" : "windowed");
 }
