@@ -41,7 +41,7 @@ public:
     void beginFrame(float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0f);
     void endFrame();
 
-    void onResize(Vector2<LONG> size);
+    void onResize(vec2_t<LONG> size);
 
     bool processMessages();
 
@@ -51,7 +51,7 @@ public:
     ID3D11RenderTargetView *getRenderTargetView() const { return m_renderTargetView.Get(); }
     ID3D11DepthStencilView *getDepthStencilView() const { return m_depthStencilView.Get(); }
 
-    Vector2<LONG> getSize() const { return m_size; }
+    vec2_t<LONG> getSize() const { return m_size; }
 
     bool isInitialized() const { return m_initialized; }
     bool isVSyncEnabled() const { return m_vsyncEnabled; }
@@ -75,7 +75,7 @@ private:
 
     void releaseRenderTargets();
 
-    HWND createWindow(const char *title, Vector2<LONG> size);
+    HWND createWindow(const char *title, vec2_t<LONG> size);
     HWND createOverlayWindow();
     void makeWindowTransparent(HWND hwnd) const;
     HWND findTargetWindow(const char *windowTitle, const char *windowClass);
@@ -96,7 +96,7 @@ private:
     ComPtr<ID3D11BlendState> m_blendState;
 
     HWND m_hwnd;
-    Vector2<LONG> m_size;
+    vec2_t<LONG> m_size;
     bool m_borderlessFullscreen;
     bool m_vsyncEnabled;
     bool m_initialized;

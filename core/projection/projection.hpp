@@ -11,8 +11,8 @@ public:
     ~ProjectionUtils() = default;
 
     template<typename T>
-    bool WorldToScreen(const Vector3<T>& worldPos, Vector2<T>& screenPos, 
-                      const Matrix4x4<T>& viewProjMatrix) const
+    bool WorldToScreen(const vec3_t<T>& worldPos, vec2_t<T>& screenPos, 
+                      const matrix4x4_t<T>& viewProjMatrix) const
     {
         const T clipX = worldPos.x * viewProjMatrix(0,0) + 
                        worldPos.y * viewProjMatrix(0,1) + 
@@ -43,8 +43,8 @@ public:
     }
     
     template<typename T>
-    bool WorldToScreenDX(const Vector3<T>& worldPos, Vector2<T>& screenPos,
-                        const Matrix4x4<T>& viewProjMatrix) const
+    bool WorldToScreenDX(const vec3_t<T>& worldPos, vec2_t<T>& screenPos,
+                        const matrix4x4_t<T>& viewProjMatrix) const
     {
         const T clipX = worldPos.x * viewProjMatrix(0,0) + 
                        worldPos.y * viewProjMatrix(1,0) + 
@@ -75,11 +75,11 @@ public:
     }
     
     template<typename T>
-    bool WorldToScreen3x4(const Vector3<T>& worldPos, Vector2<T>& screenPos,
-                         const Matrix3x4<T>& transform,
-                         const Matrix4x4<T>& projection) const
+    bool WorldToScreen3x4(const vec3_t<T>& worldPos, vec2_t<T>& screenPos,
+                         const matrix3x4_t<T>& transform,
+                         const matrix4x4_t<T>& projection) const
     {
-        Vector3<T> viewPos;
+        vec3_t<T> viewPos;
         viewPos.x = worldPos.x * transform(0,0) + worldPos.y * transform(0,1) + 
                    worldPos.z * transform(0,2) + transform(0,3);
         viewPos.y = worldPos.x * transform(1,0) + worldPos.y * transform(1,1) + 
@@ -91,10 +91,10 @@ public:
     }
     
     template<typename T>
-    bool WorldToScreenUnity(const Vector3<T>& worldPos, Vector2<T>& screenPos,
-                           const Matrix4x4<T>& mvpMatrix) const
+    bool WorldToScreenUnity(const vec3_t<T>& worldPos, vec2_t<T>& screenPos,
+                           const matrix4x4_t<T>& mvpMatrix) const
     {
-        Vector4<T> clipPos;
+        vec4_t<T> clipPos;
         clipPos.x = worldPos.x * mvpMatrix(0,0) + worldPos.y * mvpMatrix(0,1) + 
                    worldPos.z * mvpMatrix(0,2) + mvpMatrix(0,3);
         clipPos.y = worldPos.x * mvpMatrix(1,0) + worldPos.y * mvpMatrix(1,1) + 

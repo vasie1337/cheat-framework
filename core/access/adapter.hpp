@@ -62,7 +62,7 @@ protected:
 	
 public:
 	// I/O
-	virtual bool setMousePosition(const Vector2<int> &position) = 0;
+	virtual bool setMousePosition(const vec2_t<int> &position) = 0;
 	virtual bool setLeftMouseButton(bool state) = 0;
 	virtual bool getKeyState(int key) = 0;
 

@@ -42,7 +42,7 @@ void DMAAccessAdapter::destroyScatterHandle(ScatterHandle handle)
 {
 }
 
-bool DMAAccessAdapter::setMousePosition(const Vector2<int> &position)
+bool DMAAccessAdapter::setMousePosition(const vec2_t<int> &position)
 {
     return false;
 }

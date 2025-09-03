@@ -48,7 +48,7 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
             return false;
         }
 
-        m_size = Vector2<LONG>(m_targetRect.right - m_targetRect.left, m_targetRect.bottom - m_targetRect.top);
+        m_size = vec2_t<LONG>(m_targetRect.right - m_targetRect.left, m_targetRect.bottom - m_targetRect.top);
 
         log_debug("Creating overlay window (%ix%i)", m_size.x, m_size.y);
 
@@ -62,7 +62,7 @@ bool DX11Renderer::initialize(const char *windowTitle, bool borderlessFullscreen
     else
     {
         // Regular window mode
-        m_size = Vector2<LONG>(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+        m_size = vec2_t<LONG>(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 
         m_hwnd = createWindow(windowTitle, m_size);
         if (!m_hwnd)
@@ -459,7 +459,7 @@ void DX11Renderer::endFrame()
     }
 }
 
-void DX11Renderer::onResize(Vector2<LONG> size)
+void DX11Renderer::onResize(vec2_t<LONG> size)
 {
     if (!m_initialized || (size == m_size))
         return;
@@ -493,7 +493,7 @@ void DX11Renderer::onResize(Vector2<LONG> size)
     setViewport();
 }
 
-HWND DX11Renderer::createWindow(const char *title, Vector2<LONG> size)
+HWND DX11Renderer::createWindow(const char *title, vec2_t<LONG> size)
 {
     const char *className = "DX11RendererWindow";
     HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -519,13 +519,13 @@ HWND DX11Renderer::createWindow(const char *title, Vector2<LONG> size)
 
     DWORD windowStyle;
     DWORD exStyle = 0;
-    Vector2<LONG> windowSize;
-    Vector2<LONG> windowPosition;
+    vec2_t<LONG> windowSize;
+    vec2_t<LONG> windowPosition;
 
     if (m_borderlessFullscreen)
     {
         windowStyle = WS_POPUP;
-        windowPosition = Vector2<LONG>(0, 0);
+        windowPosition = vec2_t<LONG>(0, 0);
         windowSize = size;
     }
     else
@@ -533,8 +533,8 @@ HWND DX11Renderer::createWindow(const char *title, Vector2<LONG> size)
         windowStyle = WS_OVERLAPPEDWINDOW;
         RECT rect = {0, 0, size.x, size.y};
         AdjustWindowRect(&rect, windowStyle, FALSE);
-        windowPosition = Vector2<LONG>(CW_USEDEFAULT, CW_USEDEFAULT);
-        windowSize = Vector2<LONG>(rect.right - rect.left, rect.bottom - rect.top);
+        windowPosition = vec2_t<LONG>(CW_USEDEFAULT, CW_USEDEFAULT);
+        windowSize = vec2_t<LONG>(rect.right - rect.left, rect.bottom - rect.top);
     }
 
     HWND hwnd = CreateWindowExA(
@@ -684,7 +684,7 @@ void DX11Renderer::updateOverlayPosition()
 
             if (width != m_size.x || height != m_size.y)
             {
-                onResize(Vector2<LONG>(width, height));
+                onResize(vec2_t<LONG>(width, height));
             }
         }
     }
@@ -769,7 +769,7 @@ LRESULT DX11Renderer::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
         {
             int width = LOWORD(lParam);
             int height = HIWORD(lParam);
-            onResize(Vector2<LONG>(width, height));
+            onResize(vec2_t<LONG>(width, height));
         }
         return 0;
 
@@ -892,7 +892,7 @@ void DX11Renderer::setBorderlessFullscreen(bool enabled)
 
         if (screenWidth != m_size.x || screenHeight != m_size.y)
         {
-            onResize(Vector2<LONG>(screenWidth, screenHeight));
+            onResize(vec2_t<LONG>(screenWidth, screenHeight));
         }
     }
     else
@@ -916,7 +916,7 @@ void DX11Renderer::setBorderlessFullscreen(bool enabled)
 
         if (1280 != m_size.x || 720 != m_size.y)
         {
-            onResize(Vector2<LONG>(1280, 720));
+            onResize(vec2_t<LONG>(1280, 720));
         }
     }
 

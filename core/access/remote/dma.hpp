@@ -25,7 +25,7 @@ public:
     void addScatterRead(uintptr_t address, void *buffer, size_t size) override;
     bool executeScatterRead() override;
 
-    bool setMousePosition(const Vector2<int> &position) override;
+    bool setMousePosition(const vec2_t<int> &position) override;
     bool setLeftMouseButton(bool state) override;
     bool getKeyState(int key) override;
 

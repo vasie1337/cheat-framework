@@ -149,7 +149,7 @@ void WinApiAccessAdapter::destroyScatterHandle(ScatterHandle handle)
     }
 }
 
-bool WinApiAccessAdapter::setMousePosition(const Vector2<int> &position)
+bool WinApiAccessAdapter::setMousePosition(const vec2_t<int> &position)
 {
     mouse_event(MOUSEEVENTF_MOVE, position.x, position.y, 0, 0);
     return true;

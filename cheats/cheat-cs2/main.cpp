@@ -7,7 +7,7 @@
 uintptr_t client_dll = 0x0;
 uintptr_t ent_list = 0x0;
 uintptr_t local_player_ptr = 0x0;
-Matrix4x4<float> view_matrix;
+matrix4x4_t<float> view_matrix;
 
 void get_globals(Core* core)
 {
@@ -16,7 +16,7 @@ void get_globals(Core* core)
 
     core->m_access_adapter->addScatterRead(client_dll + 0x1BEC440, &local_player_ptr, sizeof(local_player_ptr));
     core->m_access_adapter->addScatterRead(client_dll + 0x1D0FE08, &ent_list, sizeof(ent_list));
-    core->m_access_adapter->addScatterRead(client_dll + 0x1E2D030, &view_matrix, sizeof(Matrix4x4<float>));
+    core->m_access_adapter->addScatterRead(client_dll + 0x1E2D030, &view_matrix, sizeof(matrix4x4_t<float>));
     core->m_access_adapter->executeScatterRead();
 }
 
@@ -25,7 +25,7 @@ struct Entity
     uintptr_t instance = 0;
     uintptr_t identity = 0;
     uintptr_t game_scene_node = 0;
-    Vector3<float> position;
+    vec3_t<float> position;
     uintptr_t designer_name_ptr = 0;
     char designer_name_buffer[64] = {};
     std::string designer_name;
@@ -35,9 +35,9 @@ struct Entity
 
 struct SkeletonBone
 {
-    Vector3<float> position;
+    vec3_t<float> position;
     float scale;
-    Vector4<float> rotation;
+    vec4_t<float> rotation;
 };
 
 struct Player
@@ -182,7 +182,7 @@ void get_players(Core* core)
     {
         for (const auto& bone : player.bones)
         {
-            Vector2<float> screen_position;
+            vec2_t<float> screen_position;
             if (core->m_projection_utils->WorldToScreen(bone.position, screen_position, view_matrix))
             {
                 draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 3.f, IM_COL32(255, 0, 0, 100), 8);

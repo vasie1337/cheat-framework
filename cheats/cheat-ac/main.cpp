@@ -9,7 +9,7 @@
 uint32_t game_base = 0x0;
 uint32_t player_list_ptr = 0x0;
 int player_list_count = 0;
-Matrix4x4<float> view_matrix;
+matrix4x4_t<float> view_matrix;
 
 void get_globals(Core* core)
 {
@@ -18,7 +18,7 @@ void get_globals(Core* core)
 
 	core->m_access_adapter->addScatterRead(game_base + 0x18AC04, &player_list_ptr, sizeof(uint32_t));
 	core->m_access_adapter->addScatterRead(game_base + 0x18AC0C, &player_list_count, sizeof(int));
-	core->m_access_adapter->addScatterRead(game_base + 0x17DFD0, &view_matrix, sizeof(Matrix4x4<float>));
+	core->m_access_adapter->addScatterRead(game_base + 0x17DFD0, &view_matrix, sizeof(matrix4x4_t<float>));
 
 	core->m_access_adapter->executeScatterRead();
 }
@@ -45,7 +45,7 @@ void get_players(Core* core)
 
 	core->m_access_adapter->executeScatterRead();
 
-	std::vector<Vector3<float>> player_positions;
+	std::vector<vec3_t<float>> player_positions;
 	player_positions.resize(player_list_count);
 
 	for (int i = 0; i < player_list_count; ++i)
@@ -55,7 +55,7 @@ void get_players(Core* core)
 			core->m_access_adapter->addScatterRead(
 				player_object_pointers[i] + 0x4,
 				&player_positions[i],
-				sizeof(Vector3<float>)
+				sizeof(vec3_t<float>)
 			);
 		}
 	}
@@ -64,7 +64,7 @@ void get_players(Core* core)
 
 	for (int i = 1; i < player_list_count; ++i)
 	{
-		Vector2<float> screen_position;
+		vec2_t<float> screen_position;
 		if (player_object_pointers[i] != 0 &&
 			core->m_projection_utils->WorldToScreenDX(player_positions[i], screen_position, view_matrix))
 		{
