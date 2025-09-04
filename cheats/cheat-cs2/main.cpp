@@ -2,8 +2,6 @@
 #include <core/logger/logger.hpp>
 #include <core/types/vector.hpp>
 #include <core/types/matrix.hpp>
-#include <core/cache/update_manager.hpp>
-#include <core/cache/change_detector.hpp>
 #include <chrono>
 #include <unordered_set>
 
@@ -18,8 +16,6 @@ struct GameCache {
     std::vector<uintptr_t> entity_pointers;
     std::vector<CachedEntity> entities;
     std::vector<CachedPlayer> players;
-
-    UpdateManager update_manager;
 
     static constexpr int GLOBALS_INTERVAL = 1000;
     static constexpr int ENTITY_SCAN_INTERVAL = 50;
@@ -191,7 +187,7 @@ static void reader(Core& core) {
     core.m_access_adapter->add_scatter(game_cache.client_dll + dwViewMatrix,
         &game_cache.view_matrix, sizeof(game_cache.view_matrix));
 
-    if (game_cache.update_manager.should_update("globals", GameCache::GLOBALS_INTERVAL)) {
+    if (core.m_update_manager->should_update("globals", GameCache::GLOBALS_INTERVAL)) {
         core.m_access_adapter->add_scatter(game_cache.client_dll + dwLocalPlayerPawn,
             &game_cache.local_player_ptr, sizeof(game_cache.local_player_ptr));
         core.m_access_adapter->add_scatter(game_cache.client_dll + dwEntityList,
@@ -200,7 +196,7 @@ static void reader(Core& core) {
 
     core.m_access_adapter->execute_scatter();
 
-    if (game_cache.update_manager.should_update("entity_scan", GameCache::ENTITY_SCAN_INTERVAL)) {
+    if (core.m_update_manager->should_update("entity_scan", GameCache::ENTITY_SCAN_INTERVAL)) {
         auto new_pointers = scan_entity_pointers(core);
 
         if (has_changed(game_cache.entity_pointers, new_pointers)) {
@@ -267,9 +263,8 @@ int main() {
 
     game_cache.client_dll = core->m_access_adapter->get_module("client.dll")->base;
 
-    // Force initial updates by using force_update
-    game_cache.update_manager.force_update("globals");
-    game_cache.update_manager.force_update("entity_scan");
+    core->m_update_manager->force_update("globals");
+    core->m_update_manager->force_update("entity_scan");
 
     core->register_function(reader);
     core->register_function(renderer);

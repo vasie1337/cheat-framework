@@ -4,19 +4,16 @@
 #include <core/logger/logger.hpp>
 #include <core/types/vector.hpp>
 #include <core/types/matrix.hpp>
-#include <core/cache/update_manager.hpp>
-#include <core/cache/change_detector.hpp>
 
 struct CachedPlayer {
     uint32_t pointer = 0;
     vec3_t<float> position;
-    bool data_cached = false;
     int health = 0;
     int team = 0;
+
+    bool data_cached = false;
 };
 
-// Static storage
-static UpdateManager update_manager_;
 static uint32_t game_base_ = 0;
 static uint32_t player_list_ptr_ = 0;
 static int player_list_count_ = 0;
@@ -24,8 +21,8 @@ static matrix4x4_t<float> view_matrix_;
 static std::vector<uint32_t> last_player_pointers_;
 static std::vector<CachedPlayer> cached_players_;
 
-static constexpr int GLOBALS_INTERVAL = 1000;    // 1 second
-static constexpr int PLAYER_SCAN_INTERVAL = 100; // 100ms
+static constexpr int GLOBALS_INTERVAL = 1000;
+static constexpr int PLAYER_SCAN_INTERVAL = 100;
 
 static void update_globals(Core& core) {
     if (!game_base_) {
@@ -50,7 +47,6 @@ static void cache_static_player_data(Core& core) {
 
     if (uncached_players.empty()) return;
 
-    // Add scatter reads for static data
     for (auto* player : uncached_players) {
         core.m_access_adapter->add_scatter(player->pointer + 0x178,
             &player->health, sizeof(int));
@@ -60,26 +56,22 @@ static void cache_static_player_data(Core& core) {
 
     core.m_access_adapter->execute_scatter();
 
-    // Mark as cached
     for (auto* player : uncached_players) {
         player->data_cached = true;
     }
 }
 
 static void update_player_cache(const std::vector<uint32_t>& new_pointers, Core& core) {
-    // Build map of existing cached data
     std::unordered_map<uint32_t, CachedPlayer> old_cache;
     for (const auto& player : cached_players_) {
         old_cache[player.pointer] = player;
     }
 
-    // Rebuild cache with new pointers
     std::vector<CachedPlayer> new_players;
     for (uint32_t pointer : new_pointers) {
         CachedPlayer player;
         player.pointer = pointer;
 
-        // Try to preserve existing cached data
         auto it = old_cache.find(pointer);
         if (it != old_cache.end() && it->second.data_cached) {
             player = it->second;
@@ -94,7 +86,6 @@ static void update_player_cache(const std::vector<uint32_t>& new_pointers, Core&
 static void update_player_list(Core& core) {
     if (player_list_count_ <= 1) return;
 
-    // Scan current player pointers
     std::vector<uint32_t> current_pointers(player_list_count_);
     for (int i = 0; i < player_list_count_; ++i) {
         core.m_access_adapter->add_scatter(
@@ -103,7 +94,6 @@ static void update_player_list(Core& core) {
     }
     core.m_access_adapter->execute_scatter();
 
-    // Check if player list changed
     if (has_changed(last_player_pointers_, current_pointers)) {
         log_debug("Player list changed, updating cache");
         last_player_pointers_ = current_pointers;
@@ -126,22 +116,17 @@ static void update_player_positions(Core& core) {
 }
 
 static void update_cache(Core& core) {
-    // Update globals periodically
-    if (update_manager_.should_update("globals", GLOBALS_INTERVAL)) {
+    if (core.m_update_manager->should_update("globals", GLOBALS_INTERVAL)) {
         update_globals(core);
     }
 
-    // Always update view matrix (needed for rendering)
-    core.m_access_adapter->add_scatter(game_base_ + 0x17DFD0,
-        &view_matrix_, sizeof(matrix4x4_t<float>));
+    core.m_access_adapter->add_scatter(game_base_ + 0x17DFD0, &view_matrix_, sizeof(matrix4x4_t<float>));
     core.m_access_adapter->execute_scatter();
 
-    // Scan for player changes periodically
-    if (update_manager_.should_update("player_scan", PLAYER_SCAN_INTERVAL)) {
+    if (core.m_update_manager->should_update("player_scan", PLAYER_SCAN_INTERVAL)) {
         update_player_list(core);
     }
 
-    // Update dynamic player data every frame
     update_player_positions(core);
 }
 
@@ -191,6 +176,9 @@ int main() {
         log_critical("Failed to initialize core");
         return 1;
     }
+
+    core->m_update_manager->force_update("globals");
+    core->m_update_manager->force_update("entity_scan");
 
     core->register_function(reader);
     core->register_function(renderer);

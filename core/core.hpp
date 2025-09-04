@@ -9,6 +9,8 @@
 #include <core/logger/logger.hpp>
 #include <core/rendering/rendering.hpp>
 #include <core/projection/projection.hpp>
+#include <core/cache/update_manager.hpp>
+#include <core/cache/change_detector.hpp>
 #include <core/access/adapter.hpp>
 #include <core/types/vector.hpp>
 #include <core/types/matrix.hpp>
@@ -123,6 +125,7 @@ public:
     std::unique_ptr<AccessAdapter> m_access_adapter;
     std::unique_ptr<DX11Renderer> m_renderer;
     std::unique_ptr<ProjectionUtils> m_projection_utils;
+    std::unique_ptr<UpdateManager> m_update_manager;
 
 private:
     TargetKind m_target_type = TargetKind::Local;
