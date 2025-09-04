@@ -33,7 +33,7 @@ public:
         return instance;
     }
 
-    void initialize(LoggerBackend backend, LogLevel level, const std::string &filename = "");
+    void initialize(LoggerBackend backend, LogLevel level, const std::string &filename = "core.log");
     void set_level(LogLevel level) { m_level = level; }
 
     void debug(const char *format, ...);

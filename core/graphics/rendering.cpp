@@ -41,7 +41,6 @@ bool DX11Renderer::initialize(std::string window_title, std::string target_windo
             return false;
         }
 
-        // Get client area instead of full window rect for precise overlay positioning
         RECT window_rect, client_rect;
         if (!GetWindowRect(m_target_hwnd, &window_rect) || !GetClientRect(m_target_hwnd, &client_rect))
         {
@@ -49,7 +48,6 @@ bool DX11Renderer::initialize(std::string window_title, std::string target_windo
             return false;
         }
 
-        // Convert client rect to screen coordinates
         POINT client_top_left = {0, 0};
         ClientToScreen(m_target_hwnd, &client_top_left);
         
@@ -58,7 +56,6 @@ bool DX11Renderer::initialize(std::string window_title, std::string target_windo
         m_target_rect.right = client_top_left.x + client_rect.right;
         m_target_rect.bottom = client_top_left.y + client_rect.bottom;
         
-        // Initialize smoothed rect to current position
         m_smoothed_rect = m_target_rect;
 
         m_size = vec2_t<LONG>(m_target_rect.right - m_target_rect.left, m_target_rect.bottom - m_target_rect.top);
@@ -253,7 +250,7 @@ bool DX11Renderer::create_device()
 
 DXGI_RATIONAL DX11Renderer::get_refresh_rate() const
 {
-    DXGI_RATIONAL refresh_rate = {60, 1}; // Default to 60 Hz
+    DXGI_RATIONAL refresh_rate = {60, 1};
     
     if (!m_dxgi_factory)
     {
@@ -261,7 +258,6 @@ DXGI_RATIONAL DX11Renderer::get_refresh_rate() const
         return refresh_rate;
     }
 
-    // Get the primary adapter
     ComPtr<IDXGIAdapter1> adapter;
     if (FAILED(m_dxgi_factory->EnumAdapters1(0, &adapter)))
     {
@@ -269,7 +265,6 @@ DXGI_RATIONAL DX11Renderer::get_refresh_rate() const
         return refresh_rate;
     }
 
-    // Get the primary output (monitor)
     ComPtr<IDXGIOutput> output;
     if (FAILED(adapter->EnumOutputs(0, &output)))
     {
@@ -277,7 +272,6 @@ DXGI_RATIONAL DX11Renderer::get_refresh_rate() const
         return refresh_rate;
     }
 
-    // Get display mode list for the current format
     UINT num_modes = 0;
     HRESULT hr = output->GetDisplayModeList(m_back_buffer_format, DXGI_ENUM_MODES_INTERLACED, &num_modes, nullptr);
     if (FAILED(hr) || num_modes == 0)
@@ -294,7 +288,6 @@ DXGI_RATIONAL DX11Renderer::get_refresh_rate() const
         return refresh_rate;
     }
 
-    // Find the mode that matches our current resolution and has the highest refresh rate
     UINT best_refresh_rate_numerator = 60;
     UINT best_refresh_rate_denominator = 1;
     
@@ -302,7 +295,6 @@ DXGI_RATIONAL DX11Renderer::get_refresh_rate() const
     {
         if (mode.Width == static_cast<UINT>(m_size.x) && mode.Height == static_cast<UINT>(m_size.y))
         {
-            // Calculate refresh rate as a float for comparison
             float current_rate = static_cast<float>(mode.RefreshRate.Numerator) / static_cast<float>(mode.RefreshRate.Denominator);
             float best_rate = static_cast<float>(best_refresh_rate_numerator) / static_cast<float>(best_refresh_rate_denominator);
             
@@ -705,18 +697,15 @@ void DX11Renderer::update_overlay_position()
         return;
     }
 
-    // Limit position checks to reduce CPU usage (check every ~16ms = ~60fps)
     DWORD current_time = GetTickCount();
     if (current_time - m_last_position_check < 16)
     {
-        // Still ensure overlay stays on top even if we skip position check
         SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         return;
     }
     m_last_position_check = current_time;
 
-    // Get both window rect and client rect to handle window decorations properly
     RECT window_rect, client_rect;
     if (!GetWindowRect(m_target_hwnd, &window_rect) || !GetClientRect(m_target_hwnd, &client_rect))
     {
@@ -724,7 +713,6 @@ void DX11Renderer::update_overlay_position()
         return;
     }
 
-    // Convert client rect to screen coordinates
     POINT client_top_left = {0, 0};
     ClientToScreen(m_target_hwnd, &client_top_left);
     
@@ -734,7 +722,6 @@ void DX11Renderer::update_overlay_position()
     client_screen_rect.right = client_top_left.x + client_rect.right;
     client_screen_rect.bottom = client_top_left.y + client_rect.bottom;
 
-    // Check if position or size changed (with small tolerance to avoid jitter)
     const int tolerance = 2;
     bool position_changed = (abs(client_screen_rect.left - m_target_rect.left) > tolerance ||
                            abs(client_screen_rect.top - m_target_rect.top) > tolerance ||
@@ -745,15 +732,12 @@ void DX11Renderer::update_overlay_position()
     {
         m_target_rect = client_screen_rect;
         
-        // Apply smoothing to reduce jitter (linear interpolation with 0.8 factor)
         if (m_smoothed_rect.left == 0 && m_smoothed_rect.top == 0)
         {
-            // First time - no smoothing
             m_smoothed_rect = client_screen_rect;
         }
         else
         {
-            // Smooth the position changes
             const float smooth_factor = 0.8f;
             m_smoothed_rect.left = static_cast<LONG>(m_smoothed_rect.left * (1.0f - smooth_factor) + client_screen_rect.left * smooth_factor);
             m_smoothed_rect.top = static_cast<LONG>(m_smoothed_rect.top * (1.0f - smooth_factor) + client_screen_rect.top * smooth_factor);
@@ -764,7 +748,6 @@ void DX11Renderer::update_overlay_position()
         LONG width = m_smoothed_rect.right - m_smoothed_rect.left;
         LONG height = m_smoothed_rect.bottom - m_smoothed_rect.top;
 
-        // Position overlay over the client area, not the entire window
         SetWindowPos(m_hwnd, HWND_TOPMOST,
                      m_smoothed_rect.left, m_smoothed_rect.top, width, height,
                      SWP_NOACTIVATE);
@@ -779,7 +762,6 @@ void DX11Renderer::update_overlay_position()
                   client_screen_rect.left, client_screen_rect.top);
     }
 
-    // Ensure overlay stays on top
     SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                  SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }

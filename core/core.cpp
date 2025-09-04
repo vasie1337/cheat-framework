@@ -6,7 +6,7 @@
 
 bool Core::initialize()
 {
-	Logger::instance().initialize(m_logger_backend_kind, m_logger_level_kind, "core.log");
+	Logger::instance().initialize(m_logger_backend_kind, m_logger_level_kind);
 
 	m_renderer = std::make_unique<DX11Renderer>();
 	if (!m_renderer)
@@ -73,7 +73,6 @@ bool Core::update()
 	}
 
 	m_renderer->begin_frame(0.0f, 0.0f, 0.0f, 0.0f);
-	m_access_adapter->record_tick();
 
 	this->execute_all_functions();
 
@@ -83,12 +82,6 @@ bool Core::update()
 		ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
 		{
-			auto stats = m_access_adapter->get_scatter_stats();
-			ImGui::Text("Scatter Stats:");
-			ImGui::Text("Reads per tick: %f", stats.reads_per_tick);
-			ImGui::Text("Total reads: %zu", stats.total_reads);
-			ImGui::Text("Total ticks: %zu", stats.total_ticks);
-
 			auto fps = m_renderer->get_fps();
 			ImGui::Text("FPS: %f", fps);
 		}
