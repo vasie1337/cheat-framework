@@ -17,7 +17,7 @@ bool Core::initialize()
 
 	switch (m_target_type)
 	{
-	case TargetKind::Local:
+	case TargetType::Local:
 		m_access_adapter = std::make_unique<WinApiAccessAdapter>();
 		if (!m_access_adapter->attach(m_target_process_name))
 		{
@@ -31,7 +31,7 @@ bool Core::initialize()
 			return false;
 		}
 		break;
-	case TargetKind::Remote:
+	case TargetType::Remote:
 		m_access_adapter = std::make_unique<DMAAccessAdapter>();
 		if (!m_access_adapter->attach(m_target_process_name))
 		{

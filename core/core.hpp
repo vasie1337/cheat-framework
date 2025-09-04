@@ -15,7 +15,7 @@
 #include <core/math/vector.hpp>
 #include <core/math/matrix.hpp>
 
-enum class TargetKind
+enum class TargetType
 {
     Local,
     Remote
@@ -76,7 +76,7 @@ public:
     bool initialize();
     bool update();
 
-    Core& with_target_type(TargetKind target_type)
+    Core& with_target_type(TargetType target_type)
     {
         m_target_type = target_type;
         return *this;
@@ -128,9 +128,10 @@ public:
     std::unique_ptr<UpdateManager> m_update_manager;
 
 private:
-    TargetKind m_target_type = TargetKind::Local;
+    TargetType m_target_type = TargetType::Local;
     LoggerBackend m_logger_backend_kind = LoggerBackend::Console;
     LogLevel m_logger_level_kind = LogLevel::Debug;
+
     bool m_show_widgets = false;
 
     std::string m_window_title;

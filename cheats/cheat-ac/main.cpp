@@ -119,7 +119,7 @@ static void renderer(Core& core) {
 int main() {
     std::unique_ptr<Core> core = std::make_unique<Core>();
 
-    core->with_target_type(TargetKind::Local)
+    core->with_target_type(TargetType::Local)
         .with_logger_backend(LoggerBackend::Console)
         .with_logger_level(LogLevel::Debug)
         .with_target("AssaultCube", "ac_client.exe")

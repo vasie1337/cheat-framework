@@ -244,7 +244,7 @@ static void renderer(Core& core) {
 int main() {
     auto core = std::make_unique<Core>();
 
-    core->with_target_type(TargetKind::Local)
+    core->with_target_type(TargetType::Local)
         .with_logger_backend(LoggerBackend::Console)
         .with_logger_level(LogLevel::Debug)
         .with_target("Counter-Strike 2", "cs2.exe")
