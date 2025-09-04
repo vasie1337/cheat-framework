@@ -1,6 +1,7 @@
 #pragma once
 #include <chrono>
 #include <unordered_map>
+#include <string>
 
 class UpdateManager {
 private:
@@ -28,6 +29,6 @@ public:
 	}
 
 	void force_update(const std::string& key) {
-		last_updates_[key] = std::chrono::steady_clock::now();
+		last_updates_.erase(key);
 	}
 };
