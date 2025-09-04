@@ -26,13 +26,12 @@
     <ClCompile Include="..\ext\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\ext\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="access\local\winapi.cpp" />
-    <ClCompile Include="access\remote\dma.cpp" />
-    <ClCompile Include="config\config.cpp" />
+    <ClCompile Include="memory\local\winapi.cpp" />
+    <ClCompile Include="memory\remote\dma.cpp" />
+    <ClCompile Include="system\config\config.cpp" />
     <ClCompile Include="core.cpp" />
-    <ClCompile Include="logger\logger.cpp" />
-    <ClCompile Include="projection\projection.cpp" />
-    <ClCompile Include="rendering\rendering.cpp" />
+    <ClCompile Include="system\logger\logger.cpp" />
+    <ClCompile Include="graphics\rendering.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ext\imgui\backends\imgui_impl_dx11.h" />
@@ -43,19 +42,19 @@
     <ClInclude Include="..\ext\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\ext\imgui\imstb_textedit.h" />
     <ClInclude Include="..\ext\imgui\imstb_truetype.h" />
-    <ClInclude Include="access\adapter.hpp" />
-    <ClInclude Include="access\local\winapi.hpp" />
-    <ClInclude Include="access\remote\dma.hpp" />
+    <ClInclude Include="memory\access_adapter.hpp" />
+    <ClInclude Include="memory\local\winapi.hpp" />
+    <ClInclude Include="memory\remote\dma.hpp" />
     <ClInclude Include="access\template\tadapter.hpp" />
-    <ClInclude Include="cache\change_detector.hpp" />
-    <ClInclude Include="cache\update_manager.hpp" />
-    <ClInclude Include="config\config.hpp" />
+    <ClInclude Include="system\cache\change_detector.hpp" />
+    <ClInclude Include="system\cache\update_manager.hpp" />
+    <ClInclude Include="system\config\config.hpp" />
     <ClInclude Include="core.hpp" />
-    <ClInclude Include="logger\logger.hpp" />
-    <ClInclude Include="projection\projection.hpp" />
-    <ClInclude Include="rendering\rendering.hpp" />
-    <ClInclude Include="types\matrix.hpp" />
-    <ClInclude Include="types\vector.hpp" />
+    <ClInclude Include="system\logger\logger.hpp" />
+    <ClInclude Include="math\projection.hpp" />
+    <ClInclude Include="graphics\rendering.hpp" />
+    <ClInclude Include="math\matrix.hpp" />
+    <ClInclude Include="math\vector.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

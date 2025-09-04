@@ -1,6 +1,6 @@
 #include <core/core.hpp>
-#include <core/access/local/winapi.hpp>
-#include <core/access/remote/dma.hpp>
+#include <core/memory/local/winapi.hpp>
+#include <core/memory/remote/dma.hpp>
 
 #include <imgui.h>
 

@@ -1,7 +1,5 @@
 #include "winapi.hpp"
 
-#include <core/logger/logger.hpp>
-
 bool WinApiAccessAdapter::attach(const std::string &process_name)
 {
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);

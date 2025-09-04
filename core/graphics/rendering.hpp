@@ -9,7 +9,7 @@
 #include <string>
 #include <dwmapi.h>
 
-#include <core/types/vector.hpp>
+#include <core/math/vector.hpp>
 
 struct ImDrawData;
 struct ImGuiContext;

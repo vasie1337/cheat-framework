@@ -1,7 +1,5 @@
 #pragma once
-#include <core/access/adapter.hpp>
-#include <windows.h>
-#include <tlhelp32.h>
+#include "../access_adapter.hpp"
 
 class DMAAccessAdapter : public AccessAdapter
 {

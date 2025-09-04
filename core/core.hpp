@@ -6,14 +6,14 @@
 #include <memory>
 #include <chrono>
 
-#include <core/logger/logger.hpp>
-#include <core/rendering/rendering.hpp>
-#include <core/projection/projection.hpp>
-#include <core/cache/update_manager.hpp>
-#include <core/cache/change_detector.hpp>
-#include <core/access/adapter.hpp>
-#include <core/types/vector.hpp>
-#include <core/types/matrix.hpp>
+#include <core/system/logger/logger.hpp>
+#include <core/graphics/rendering.hpp>
+#include <core/math/projection.hpp>
+#include <core/system/cache/update_manager.hpp>
+#include <core/system/cache/change_detector.hpp>
+#include <core/memory/access_adapter.hpp>
+#include <core/math/vector.hpp>
+#include <core/math/matrix.hpp>
 
 enum class TargetKind
 {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <core/types/vector.hpp>
-#include <core/types/matrix.hpp>
-#include <core/rendering/rendering.hpp>
+#include <core/math/vector.hpp>
+#include <core/math/matrix.hpp>
+#include <core/graphics/rendering.hpp>
 
 class ProjectionUtils
 {
 public:
-    explicit ProjectionUtils(const DX11Renderer* renderer);
+	ProjectionUtils(const DX11Renderer* renderer) : m_renderer(renderer) {}
     ~ProjectionUtils() = default;
 
     template<typename T>

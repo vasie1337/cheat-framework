@@ -1,8 +1,10 @@
 #pragma once
-#include <core/access/adapter.hpp>
+#include "../access_adapter.hpp"
 #include <windows.h>
 #include <tlhelp32.h>
 #include <vector>
+
+#include <core/system/logger/logger.hpp>
 
 class WinApiAccessAdapter : public AccessAdapter
 {

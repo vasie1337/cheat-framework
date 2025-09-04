@@ -2,8 +2,8 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="core.cpp" />
-    <ClCompile Include="logger\logger.cpp" />
-    <ClCompile Include="rendering\rendering.cpp" />
+    <ClCompile Include="system\logger\logger.cpp" />
+    <ClCompile Include="graphics\rendering.cpp" />
     <ClCompile Include="..\ext\imgui\imgui.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
@@ -25,15 +25,14 @@
     <ClCompile Include="..\ext\imgui\backends\imgui_impl_win32.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="access\local\winapi.cpp" />
-    <ClCompile Include="access\remote\dma.cpp" />
-    <ClCompile Include="projection\projection.cpp" />
-    <ClCompile Include="config\config.cpp" />
+    <ClCompile Include="memory\local\winapi.cpp" />
+    <ClCompile Include="memory\remote\dma.cpp" />
+    <ClCompile Include="system\config\config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core.hpp" />
-    <ClInclude Include="logger\logger.hpp" />
-    <ClInclude Include="rendering\rendering.hpp" />
+    <ClInclude Include="system\logger\logger.hpp" />
+    <ClInclude Include="graphics\rendering.hpp" />
     <ClInclude Include="..\ext\imgui\imconfig.h">
       <Filter>imgui</Filter>
     </ClInclude>
@@ -59,15 +58,15 @@
       <Filter>imgui</Filter>
     </ClInclude>
     <ClInclude Include="access\template\tadapter.hpp" />
-    <ClInclude Include="types\vector.hpp" />
-    <ClInclude Include="access\local\winapi.hpp" />
-    <ClInclude Include="access\remote\dma.hpp" />
-    <ClInclude Include="access\adapter.hpp" />
-    <ClInclude Include="types\matrix.hpp" />
-    <ClInclude Include="projection\projection.hpp" />
-    <ClInclude Include="config\config.hpp" />
-    <ClInclude Include="cache\update_manager.hpp" />
-    <ClInclude Include="cache\change_detector.hpp" />
+    <ClInclude Include="math\vector.hpp" />
+    <ClInclude Include="memory\local\winapi.hpp" />
+    <ClInclude Include="memory\remote\dma.hpp" />
+    <ClInclude Include="memory\access_adapter.hpp" />
+    <ClInclude Include="math\matrix.hpp" />
+    <ClInclude Include="math\projection.hpp" />
+    <ClInclude Include="system\config\config.hpp" />
+    <ClInclude Include="system\cache\update_manager.hpp" />
+    <ClInclude Include="system\cache\change_detector.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">

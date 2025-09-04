@@ -5,7 +5,7 @@
 #include <memory>
 #include <chrono>
 
-#include <core/types/vector.hpp>
+#include <core/math/vector.hpp>
 
 class ProcessModule
 {
