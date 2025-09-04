@@ -51,6 +51,7 @@ public:
     ID3D11DepthStencilView *get_depth_stencil_view() const { return m_depth_stencil_view.Get(); }
 
     vec2_t<LONG> get_size() const { return m_size; }
+    float get_fps() const;
 
     bool is_initialized() const { return m_initialized; }
 
@@ -93,6 +94,7 @@ private:
 
     HWND m_hwnd;
     vec2_t<LONG> m_size;
+    float m_fps;
     bool m_initialized;
     bool m_imgui_initialized;
     bool m_should_close;

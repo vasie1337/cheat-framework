@@ -508,6 +508,8 @@ void DX11Renderer::begin_frame(float r, float g, float b, float a)
     m_context->ClearDepthStencilView(m_depth_stencil_view.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     begin_imgui_frame();
+
+    m_fps = ImGui::GetIO().Framerate;
 }
 
 void DX11Renderer::end_frame()
@@ -668,6 +670,11 @@ void DX11Renderer::make_window_transparent(HWND hwnd) const
 HWND DX11Renderer::find_target_window(std::string window_title)
 {
     return FindWindowA(nullptr, window_title.c_str());
+}
+
+float DX11Renderer::get_fps() const
+{
+    return m_fps;
 }
 
 void DX11Renderer::update_overlay_position()

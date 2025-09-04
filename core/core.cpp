@@ -86,6 +86,9 @@ bool Core::update()
 			ImGui::Text("Reads per tick: %f", stats.reads_per_tick);
 			ImGui::Text("Total reads: %zu", stats.total_reads);
 			ImGui::Text("Total ticks: %zu", stats.total_ticks);
+
+			auto fps = m_renderer->get_fps();
+			ImGui::Text("FPS: %f", fps);
 		}
 		ImGui::End();
 	}
