@@ -5,62 +5,61 @@
 
 #include "sdk/sdk.hpp"
 
-// Globals
-uintptr_t client_dll = 0x0;
-uintptr_t ent_list = 0x0;
-uintptr_t local_player_ptr = 0x0;
-matrix4x4_t<float> view_matrix;
+struct GameCache {
+    uintptr_t client_dll = 0x0;
+    uintptr_t ent_list = 0x0;
+    uintptr_t local_player_ptr = 0x0;
 
-void get_globals(Core& core)
+    std::vector<CachePlayer> players;
+    std::vector<CacheEntity> entities;
+    matrix4x4_t<float> view_matrix;
+} game_cache;
+
+void read_globals(Core& core)
 {
-    if (!client_dll)
-        client_dll = core.m_access_adapter->get_module("client.dll")->base;
-
-    core.m_access_adapter->add_scatter(client_dll + dwLocalPlayerPawn, &local_player_ptr, sizeof(local_player_ptr));
-    core.m_access_adapter->add_scatter(client_dll + dwEntityList, &ent_list, sizeof(ent_list));
-    core.m_access_adapter->add_scatter(client_dll + dwViewMatrix, &view_matrix, sizeof(matrix4x4_t<float>));
+    core.m_access_adapter->add_scatter(game_cache.client_dll + dwLocalPlayerPawn, &game_cache.local_player_ptr, sizeof(game_cache.local_player_ptr));
+    core.m_access_adapter->add_scatter(game_cache.client_dll + dwEntityList, &game_cache.ent_list, sizeof(game_cache.ent_list));
+    core.m_access_adapter->add_scatter(game_cache.client_dll + dwViewMatrix, &game_cache.view_matrix, sizeof(game_cache.view_matrix));
     core.m_access_adapter->execute_scatter();
 }
 
-std::vector<CacheEntity> getEntities(Core& core)
+static std::vector<CacheEntity> read_entities(Core& core)
 {
-
-    uintptr_t listAddresses[MAX_LISTS];
-    core.m_access_adapter->add_scatter(ent_list + 0x10, listAddresses, sizeof(listAddresses));
+    uintptr_t list_ptrs[MAX_LISTS]{};
+    core.m_access_adapter->add_scatter(game_cache.ent_list + 0x10, list_ptrs, sizeof(list_ptrs));
     core.m_access_adapter->execute_scatter();
 
-    std::vector<std::vector<uint8_t>> entityChunks;
-    std::vector<uintptr_t> validListAddresses;
+    std::vector<std::vector<uint8_t>> entity_chunks;
+    std::vector<uintptr_t> valid_list_ptrs;
 
     for (int i = 0; i < MAX_LISTS; i++)
     {
-        if (listAddresses[i] == 0) break;
-        validListAddresses.push_back(listAddresses[i]);
-        entityChunks.emplace_back(LIST_ENTRIES * CENTITY_IDENTITY_SIZE);
+        if (list_ptrs[i] == 0) break;
+        valid_list_ptrs.push_back(list_ptrs[i]);
+        entity_chunks.emplace_back(LIST_ENTRIES * CENTITY_IDENTITY_SIZE);
     }
 
-    for (size_t i = 0; i < validListAddresses.size(); i++)
+    for (size_t i = 0; i < valid_list_ptrs.size(); i++)
     {
-        core.m_access_adapter->add_scatter(validListAddresses[i], entityChunks[i].data(), entityChunks[i].size());
+        core.m_access_adapter->add_scatter(valid_list_ptrs[i], entity_chunks[i].data(), entity_chunks[i].size());
     }
     core.m_access_adapter->execute_scatter();
 
     std::vector<CacheEntity> entities;
-    for (int i = 0; i < entityChunks.size(); i++)
+    for (int i = 0; i < entity_chunks.size(); i++)
     {
         for (int j = 0; j < LIST_ENTRIES; j++)
         {
             int entityIndex = i * LIST_ENTRIES + j;
             if (entityIndex == 0) continue;
 
-            uintptr_t* identity = reinterpret_cast<uintptr_t*>(entityChunks[i].data() + (j * CENTITY_IDENTITY_SIZE));
+            uintptr_t* identity = reinterpret_cast<uintptr_t*>(entity_chunks[i].data() + (j * CENTITY_IDENTITY_SIZE));
             if (identity[0] == 0) continue;
 
             entities.push_back({ identity[0] });
         }
     }
 
-    // Read entity data in batches
     for (auto& entity : entities)
     {
         core.m_access_adapter->add_scatter(entity.instance + CEntityInstance::m_pEntity, &entity.identity, sizeof(entity.identity));
@@ -90,12 +89,11 @@ std::vector<CacheEntity> getEntities(Core& core)
     return entities;
 }
 
-void get_players(Core& core)
+static std::vector<CachePlayer> read_players(Core& core, const std::vector<CacheEntity>& entities)
 {
-    ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-    std::vector<CacheEntity> entities = getEntities(core);
-
     std::vector<CachePlayer> players;
+
+    // Filter player controllers from entities
     for (const auto& entity : entities)
     {
         if (entity.designer_name == "cs_player_controller")
@@ -114,7 +112,7 @@ void get_players(Core& core)
     // Read list pawns
     for (auto& player : players)
     {
-        core.m_access_adapter->add_scatter(ent_list + 0x8 * ((player.controller_pawn & 0x7FFF) >> 0X9) + 0x10, &player.list_pawn, sizeof(player.list_pawn));
+        core.m_access_adapter->add_scatter(game_cache.ent_list + 0x8 * ((player.controller_pawn & 0x7FFF) >> 0X9) + 0x10, &player.list_pawn, sizeof(player.list_pawn));
     }
     core.m_access_adapter->execute_scatter();
 
@@ -146,30 +144,44 @@ void get_players(Core& core)
     }
     core.m_access_adapter->execute_scatter();
 
-    // Draw bones
-    for (const auto& player : players)
+    return players;
+}
+
+static void reader(Core& core)
+{
+    read_globals(core);
+
+    game_cache.entities = read_entities(core);
+    game_cache.players = read_players(core, game_cache.entities);
+}
+
+static void renderer(Core& core)
+{
+    ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+
+    for (const auto& player : game_cache.players)
     {
         for (const auto& bone : player.bones)
         {
             vec2_t<float> screen_position;
-            if (core.m_projection_utils->WorldToScreen(bone.position, screen_position, view_matrix))
+            if (core.m_projection_utils->WorldToScreen(bone.position, screen_position, game_cache.view_matrix))
             {
                 draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 3.f, IM_COL32(255, 0, 0, 100), 8);
             }
         }
     }
-}
 
-// Will read everything with in function time boundaries
-// will use a double buffer cache to store data
-static void reader(Core& core) {
+    for (const auto& entity : game_cache.entities)
+    {
+        if (entity.designer_name == "cs_player_controller") continue;
 
-}
+        vec2_t<float> screen_position;
+        if (core.m_projection_utils->WorldToScreen(entity.position, screen_position, game_cache.view_matrix))
+        {
+            draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 2.f, IM_COL32(0, 255, 0, 100), 6);
 
-// read from double buffer
-// Will render and 2ws cached positions from player bones and ent positions
-static void renderer(Core& core) {
-
+        }
+    }
 }
 
 int main()
@@ -188,11 +200,10 @@ int main()
         return 1;
     }
 
-    //core->register_function(get_globals, 1000);
-    //core->register_function(get_players, 1);
+    game_cache.client_dll = core->m_access_adapter->get_module("client.dll")->base;
 
-    core->register_function(reader, 1000);
-    core->register_function(renderer, -1);
+    core->register_function(reader);
+    core->register_function(renderer);
 
     while (core->update()) {}
     return 0;

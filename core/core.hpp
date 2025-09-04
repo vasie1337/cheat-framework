@@ -111,7 +111,7 @@ public:
         return *this;
     }
 
-    void register_function(std::function<void(Core&)> function, int interval_ms)
+    void register_function(std::function<void(Core&)> function, int interval_ms = -1)
     {
         m_functions.emplace_back(
             std::make_unique<CachedFunction>(
