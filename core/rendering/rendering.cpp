@@ -117,6 +117,7 @@ bool DX11Renderer::initialize(std::string window_title, std::string target_windo
         make_window_transparent(m_hwnd);
         ShowWindow(m_hwnd, SW_SHOW);
         UpdateWindow(m_hwnd);
+        SetForegroundWindow(m_target_hwnd);
     }
 
     if (!initialize_imgui())

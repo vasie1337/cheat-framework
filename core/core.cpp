@@ -77,7 +77,7 @@ bool Core::update()
 
 	if (m_show_widgets)
 	{
-		ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(300, 300), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
 		{
