@@ -1,11 +1,5 @@
 #include <core/core.hpp>
-#include <core/logger/logger.hpp>
-#include <core/types/vector.hpp>
-#include <core/types/matrix.hpp>
-#include <chrono>
-#include <unordered_set>
-
-#include "sdk/sdk.hpp"
+#include <sdk/sdk.hpp>
 
 struct GameCache {
     uintptr_t client_dll = 0x0;

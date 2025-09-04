@@ -1,10 +1,6 @@
 #pragma once
 #include <core/core.hpp>
-#include <core/logger/logger.hpp>
-#include <core/types/vector.hpp>
-#include <core/types/matrix.hpp>
-
-#include "sdk/sdk.hpp"
+#include <sdk/sdk.hpp>
 
 struct GameCache {
     uint32_t game_base = 0;
