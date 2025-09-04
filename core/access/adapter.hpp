@@ -139,7 +139,7 @@ public:
 		return execute_scatter_read();
 	}
 
-	void start_tick()
+	void record_tick()
 	{
 		m_scatter_stats.record_tick();
 	}

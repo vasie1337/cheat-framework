@@ -4,7 +4,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="client_dll.hpp" />
-    <ClInclude Include="offsets.hpp" />
+    <ClInclude Include="sdk\schemas\client_dll.hpp" />
+    <ClInclude Include="sdk\schemas\offsets.hpp" />
+    <ClInclude Include="sdk\types\types.hpp" />
+    <ClInclude Include="sdk\sdk.hpp" />
+    <ClInclude Include="sdk\constants\constants.hpp" />
   </ItemGroup>
 </Project>

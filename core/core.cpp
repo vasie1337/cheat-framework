@@ -71,12 +71,9 @@ bool Core::update()
 	}
 
 	m_renderer->begin_frame(0.0f, 0.0f, 0.0f, 0.0f);
-	m_access_adapter->start_tick();
+	m_access_adapter->record_tick();
 
-	for (auto& callback : m_callbacks)
-	{
-		callback(this);
-	}
+	this->execute_all_functions();
 
 	if (m_show_widgets)
 	{
