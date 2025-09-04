@@ -78,8 +78,12 @@ bool Core::update()
 
 	if (m_show_widgets)
 	{
-		ImGui::SetNextWindowPos(ImVec2(300, 300), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
+		ImVec2 ScreenSize = ImGui::GetIO().DisplaySize;
+		ImVec2 WindowSize = ImVec2(300, 200);
+		ImVec2 WindowPos = ImVec2(ScreenSize.x / 2 - WindowSize.x / 2, ScreenSize.y / 2 - WindowSize.y / 2);
+
+		ImGui::SetNextWindowSize(WindowSize, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(WindowPos, ImGuiCond_FirstUseEver);
 		ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
 		{
 			auto fps = m_renderer->get_fps();
