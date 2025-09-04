@@ -31,4 +31,8 @@ public:
 	void force_update(const std::string& key) {
 		last_updates_.erase(key);
 	}
+
+	void force_update_all() {
+		last_updates_.clear();
+	}
 };

@@ -132,8 +132,7 @@ int main() {
 
     game_cache.game_base = static_cast<uint32_t>(core->m_access_adapter->get_module("ac_client.exe")->base);
 
-    core->m_update_manager->force_update("globals");
-    core->m_update_manager->force_update("entity_scan");
+    core->m_update_manager->force_update_all();
 
     core->register_function(reader);
     core->register_function(renderer);
