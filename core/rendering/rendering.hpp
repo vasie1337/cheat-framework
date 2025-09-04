@@ -59,6 +59,8 @@ public:
     HWND get_target_window() const { return m_target_hwnd; }
 
 private:
+    DXGI_RATIONAL get_refresh_rate() const;
+
     bool create_device();
     bool create_swap_chain(HWND hwnd);
     bool create_render_target_view();

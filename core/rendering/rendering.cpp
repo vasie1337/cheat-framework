@@ -235,6 +235,79 @@ bool DX11Renderer::create_device()
     return true;
 }
 
+DXGI_RATIONAL DX11Renderer::get_refresh_rate() const
+{
+    DXGI_RATIONAL refresh_rate = {60, 1}; // Default to 60 Hz
+    
+    if (!m_dxgi_factory)
+    {
+        log_warning("DXGI factory not available, using default refresh rate");
+        return refresh_rate;
+    }
+
+    // Get the primary adapter
+    ComPtr<IDXGIAdapter1> adapter;
+    if (FAILED(m_dxgi_factory->EnumAdapters1(0, &adapter)))
+    {
+        log_warning("Failed to enumerate adapters, using default refresh rate");
+        return refresh_rate;
+    }
+
+    // Get the primary output (monitor)
+    ComPtr<IDXGIOutput> output;
+    if (FAILED(adapter->EnumOutputs(0, &output)))
+    {
+        log_warning("Failed to enumerate outputs, using default refresh rate");
+        return refresh_rate;
+    }
+
+    // Get display mode list for the current format
+    UINT num_modes = 0;
+    HRESULT hr = output->GetDisplayModeList(m_back_buffer_format, DXGI_ENUM_MODES_INTERLACED, &num_modes, nullptr);
+    if (FAILED(hr) || num_modes == 0)
+    {
+        log_warning("Failed to get display mode count, using default refresh rate");
+        return refresh_rate;
+    }
+
+    std::vector<DXGI_MODE_DESC> display_modes(num_modes);
+    hr = output->GetDisplayModeList(m_back_buffer_format, DXGI_ENUM_MODES_INTERLACED, &num_modes, display_modes.data());
+    if (FAILED(hr))
+    {
+        log_warning("Failed to get display modes, using default refresh rate");
+        return refresh_rate;
+    }
+
+    // Find the mode that matches our current resolution and has the highest refresh rate
+    UINT best_refresh_rate_numerator = 60;
+    UINT best_refresh_rate_denominator = 1;
+    
+    for (const auto& mode : display_modes)
+    {
+        if (mode.Width == static_cast<UINT>(m_size.x) && mode.Height == static_cast<UINT>(m_size.y))
+        {
+            // Calculate refresh rate as a float for comparison
+            float current_rate = static_cast<float>(mode.RefreshRate.Numerator) / static_cast<float>(mode.RefreshRate.Denominator);
+            float best_rate = static_cast<float>(best_refresh_rate_numerator) / static_cast<float>(best_refresh_rate_denominator);
+            
+            if (current_rate > best_rate)
+            {
+                best_refresh_rate_numerator = mode.RefreshRate.Numerator;
+                best_refresh_rate_denominator = mode.RefreshRate.Denominator;
+            }
+        }
+    }
+
+    refresh_rate.Numerator = best_refresh_rate_numerator;
+    refresh_rate.Denominator = best_refresh_rate_denominator;
+    
+    log_debug("Detected refresh rate: %u/%u (~%.1f Hz)", 
+              refresh_rate.Numerator, refresh_rate.Denominator,
+              static_cast<float>(refresh_rate.Numerator) / static_cast<float>(refresh_rate.Denominator));
+
+    return refresh_rate;
+}
+
 bool DX11Renderer::create_swap_chain(HWND hwnd)
 {
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -248,9 +321,9 @@ bool DX11Renderer::create_swap_chain(HWND hwnd)
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     swapChainDesc.Flags = 0;
 
+
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = {};
-    fullscreenDesc.RefreshRate.Numerator = 60;
-    fullscreenDesc.RefreshRate.Denominator = 1;
+    fullscreenDesc.RefreshRate = get_refresh_rate();
     fullscreenDesc.Windowed = TRUE;
 
     HRESULT hr = m_dxgi_factory->CreateSwapChainForHwnd(
