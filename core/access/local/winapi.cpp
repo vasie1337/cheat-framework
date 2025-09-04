@@ -4,7 +4,6 @@
 
 bool WinApiAccessAdapter::attach(const std::string &process_name)
 {
-    log_debug("Attaching WinApiAccessAdapter to %s", process_name.c_str());
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE)
     {
@@ -85,7 +84,7 @@ ScatterHandle WinApiAccessAdapter::create_scatter_handle()
     return new WinApiScatterHandle();
 }
 
-void WinApiAccessAdapter::add_scatter(uintptr_t address, void *buffer, size_t size)
+void WinApiAccessAdapter::add_scatter_read(uintptr_t address, void *buffer, size_t size)
 {
     initialize_scatter_handle();
     if (m_scatter_handle == nullptr)
@@ -99,7 +98,7 @@ void WinApiAccessAdapter::add_scatter(uintptr_t address, void *buffer, size_t si
     scatterHandle->entries.push_back(entry);
 }
 
-bool WinApiAccessAdapter::execute_scatter()
+bool WinApiAccessAdapter::execute_scatter_read()
 {
     if (m_scatter_handle == nullptr)
         return false;

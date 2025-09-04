@@ -3,6 +3,12 @@
 #include <core/types/vector.hpp>
 #include <core/types/matrix.hpp>
 
+#include "client_dll.hpp"
+#include "offsets.hpp"
+
+using namespace cs2_dumper::offsets::client_dll;
+using namespace cs2_dumper::schemas::client_dll;
+
 // Globals
 uintptr_t client_dll = 0x0;
 uintptr_t ent_list = 0x0;
@@ -14,9 +20,9 @@ void get_globals(Core* core)
     if (!client_dll)
         client_dll = core->m_access_adapter->get_module("client.dll")->base;
 
-    core->m_access_adapter->add_scatter(client_dll + 0x1BEC440, &local_player_ptr, sizeof(local_player_ptr));
-    core->m_access_adapter->add_scatter(client_dll + 0x1D0FE08, &ent_list, sizeof(ent_list));
-    core->m_access_adapter->add_scatter(client_dll + 0x1E2D030, &view_matrix, sizeof(matrix4x4_t<float>));
+    core->m_access_adapter->add_scatter(client_dll + dwLocalPlayerPawn, &local_player_ptr, sizeof(local_player_ptr));
+    core->m_access_adapter->add_scatter(client_dll + dwEntityList, &ent_list, sizeof(ent_list));
+    core->m_access_adapter->add_scatter(client_dll + dwViewMatrix, &view_matrix, sizeof(matrix4x4_t<float>));
     core->m_access_adapter->execute_scatter();
 }
 
@@ -94,21 +100,21 @@ std::vector<Entity> getEntities(Core* core)
     // Read entity data in batches
     for (auto& entity : entities)
     {
-        core->m_access_adapter->add_scatter(entity.instance + 0x10, &entity.identity, sizeof(entity.identity));
-        core->m_access_adapter->add_scatter(entity.instance + 0x330, &entity.game_scene_node, sizeof(entity.game_scene_node));
+        core->m_access_adapter->add_scatter(entity.instance + CEntityInstance::m_pEntity, &entity.identity, sizeof(entity.identity));
+        core->m_access_adapter->add_scatter(entity.instance + C_BaseEntity::m_pGameSceneNode, &entity.game_scene_node, sizeof(entity.game_scene_node));
     }
     core->m_access_adapter->execute_scatter();
 
     for (auto& entity : entities)
     {
-        core->m_access_adapter->add_scatter(entity.identity + 0x20, &entity.designer_name_ptr, sizeof(entity.designer_name_ptr));
+        core->m_access_adapter->add_scatter(entity.identity + CEntityIdentity::m_designerName, &entity.designer_name_ptr, sizeof(entity.designer_name_ptr));
     }
     core->m_access_adapter->execute_scatter();
 
     for (auto& entity : entities)
     {
         core->m_access_adapter->add_scatter(entity.designer_name_ptr, &entity.designer_name_buffer, sizeof(entity.designer_name_buffer));
-        core->m_access_adapter->add_scatter(entity.game_scene_node + 0x88, &entity.position, sizeof(entity.position));
+        core->m_access_adapter->add_scatter(entity.game_scene_node + CGameSceneNode::m_vecOrigin, &entity.position, sizeof(entity.position));
     }
     core->m_access_adapter->execute_scatter();
 
@@ -138,7 +144,7 @@ void get_players(Core* core)
     // Read controller pawns
     for (auto& player : players)
     {
-        core->m_access_adapter->add_scatter(player.entity.instance + 0x8FC, &player.controller_pawn, sizeof(player.controller_pawn));
+        core->m_access_adapter->add_scatter(player.entity.instance + CCSPlayerController::m_hPlayerPawn, &player.controller_pawn, sizeof(player.controller_pawn));
     }
     core->m_access_adapter->execute_scatter();
 
@@ -159,14 +165,14 @@ void get_players(Core* core)
     // Read game scene nodes
     for (auto& player : players)
     {
-        core->m_access_adapter->add_scatter(player.player_pawn + 0x330, &player.entity.game_scene_node, sizeof(player.entity.game_scene_node));
+        core->m_access_adapter->add_scatter(player.player_pawn + C_BaseEntity::m_pGameSceneNode, &player.entity.game_scene_node, sizeof(player.entity.game_scene_node));
     }
     core->m_access_adapter->execute_scatter();
 
     // Read bone arrays
     for (auto& player : players)
     {
-        core->m_access_adapter->add_scatter(player.entity.game_scene_node + 0x190 + 0x80, &player.bone_array, sizeof(player.bone_array));
+        core->m_access_adapter->add_scatter(player.entity.game_scene_node + CSkeletonInstance::m_modelState + 0x80, &player.bone_array, sizeof(player.bone_array));
     }
     core->m_access_adapter->execute_scatter();
 

@@ -19,8 +19,8 @@ public:
 
     bool get_modules(std::vector<ProcessModule> &modules) override;
 
-    void add_scatter(uintptr_t address, void *buffer, size_t size) override;
-    bool execute_scatter() override;
+    void add_scatter_read(uintptr_t address, void *buffer, size_t size) override;
+    bool execute_scatter_read() override;
 
     bool set_mouse_position(const vec2_t<int> &position) override;
     bool set_left_mouse_button(bool state) override;

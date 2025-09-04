@@ -3,4 +3,8 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="client_dll.hpp" />
+    <ClInclude Include="offsets.hpp" />
+  </ItemGroup>
 </Project>

@@ -24,7 +24,7 @@ bool Core::initialize()
 			log_error("Failed to attach local access adapter");
 			return false;
 		}
-		log_debug("Local access adapter attached to %s", m_target_process_name);
+		log_debug("Local access adapter attached to %s", m_target_process_name.c_str());
 		if (!m_renderer->initialize(m_target_window_title, m_target_window_title))
 		{
 			log_error("Failed to initialize overlay renderer");
@@ -71,6 +71,7 @@ bool Core::update()
 	}
 
 	m_renderer->begin_frame(0.0f, 0.0f, 0.0f, 0.0f);
+	m_access_adapter->start_tick();
 
 	for (auto& callback : m_callbacks)
 	{
@@ -83,7 +84,11 @@ bool Core::update()
 		ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 		ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
 		{
-
+			auto stats = m_access_adapter->get_scatter_stats();
+			ImGui::Text("Scatter Stats:");
+			ImGui::Text("Reads per tick: %f", stats.reads_per_tick);
+			ImGui::Text("Total reads: %zu", stats.total_reads);
+			ImGui::Text("Total ticks: %zu", stats.total_ticks);
 		}
 		ImGui::End();
 	}
