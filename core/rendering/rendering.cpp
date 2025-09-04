@@ -10,9 +10,10 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DX11Renderer::DX11Renderer()
-    : m_hwnd(nullptr), m_size(0, 0), m_initialized(false), m_should_close(false), m_feature_level(D3D_FEATURE_LEVEL_11_0), m_back_buffer_format(DXGI_FORMAT_R8G8B8A8_UNORM), m_msaa_quality(0), m_sample_count(1), m_target_hwnd(nullptr), m_imgui_initialized(false)
+    : m_hwnd(nullptr), m_size(0, 0), m_initialized(false), m_should_close(false), m_feature_level(D3D_FEATURE_LEVEL_11_0), m_back_buffer_format(DXGI_FORMAT_R8G8B8A8_UNORM), m_msaa_quality(0), m_sample_count(1), m_target_hwnd(nullptr), m_imgui_initialized(false), m_last_position_check(0)
 {
     m_target_rect = {0, 0, 0, 0};
+    m_smoothed_rect = {0, 0, 0, 0};
     m_margins = {-1, -1, -1, -1};
 }
 
@@ -40,11 +41,25 @@ bool DX11Renderer::initialize(std::string window_title, std::string target_windo
             return false;
         }
 
-        if (!GetWindowRect(m_target_hwnd, &m_target_rect))
+        // Get client area instead of full window rect for precise overlay positioning
+        RECT window_rect, client_rect;
+        if (!GetWindowRect(m_target_hwnd, &window_rect) || !GetClientRect(m_target_hwnd, &client_rect))
         {
-            log_error("Failed to get target window rect");
+            log_error("Failed to get target window rectangles");
             return false;
         }
+
+        // Convert client rect to screen coordinates
+        POINT client_top_left = {0, 0};
+        ClientToScreen(m_target_hwnd, &client_top_left);
+        
+        m_target_rect.left = client_top_left.x;
+        m_target_rect.top = client_top_left.y;
+        m_target_rect.right = client_top_left.x + client_rect.right;
+        m_target_rect.bottom = client_top_left.y + client_rect.bottom;
+        
+        // Initialize smoothed rect to current position
+        m_smoothed_rect = m_target_rect;
 
         m_size = vec2_t<LONG>(m_target_rect.right - m_target_rect.left, m_target_rect.bottom - m_target_rect.top);
 
@@ -690,26 +705,81 @@ void DX11Renderer::update_overlay_position()
         return;
     }
 
-    RECT new_rect;
-    if (GetWindowRect(m_target_hwnd, &new_rect))
+    // Limit position checks to reduce CPU usage (check every ~16ms = ~60fps)
+    DWORD current_time = GetTickCount();
+    if (current_time - m_last_position_check < 16)
     {
-        if (memcmp(&new_rect, &m_target_rect, sizeof(RECT)) != 0)
-        {
-            m_target_rect = new_rect;
-            LONG width = new_rect.right - new_rect.left;
-            LONG height = new_rect.bottom - new_rect.top;
+        // Still ensure overlay stays on top even if we skip position check
+        SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        return;
+    }
+    m_last_position_check = current_time;
 
-            SetWindowPos(m_hwnd, HWND_TOPMOST,
-                         new_rect.left, new_rect.top, width, height,
-                         SWP_NOACTIVATE);
-
-            if (width != m_size.x || height != m_size.y)
-            {
-                on_resize(vec2_t<LONG>(width, height));
-            }
-        }
+    // Get both window rect and client rect to handle window decorations properly
+    RECT window_rect, client_rect;
+    if (!GetWindowRect(m_target_hwnd, &window_rect) || !GetClientRect(m_target_hwnd, &client_rect))
+    {
+        log_warning("Failed to get target window rectangles");
+        return;
     }
 
+    // Convert client rect to screen coordinates
+    POINT client_top_left = {0, 0};
+    ClientToScreen(m_target_hwnd, &client_top_left);
+    
+    RECT client_screen_rect;
+    client_screen_rect.left = client_top_left.x;
+    client_screen_rect.top = client_top_left.y;
+    client_screen_rect.right = client_top_left.x + client_rect.right;
+    client_screen_rect.bottom = client_top_left.y + client_rect.bottom;
+
+    // Check if position or size changed (with small tolerance to avoid jitter)
+    const int tolerance = 2;
+    bool position_changed = (abs(client_screen_rect.left - m_target_rect.left) > tolerance ||
+                           abs(client_screen_rect.top - m_target_rect.top) > tolerance ||
+                           abs(client_screen_rect.right - m_target_rect.right) > tolerance ||
+                           abs(client_screen_rect.bottom - m_target_rect.bottom) > tolerance);
+
+    if (position_changed)
+    {
+        m_target_rect = client_screen_rect;
+        
+        // Apply smoothing to reduce jitter (linear interpolation with 0.8 factor)
+        if (m_smoothed_rect.left == 0 && m_smoothed_rect.top == 0)
+        {
+            // First time - no smoothing
+            m_smoothed_rect = client_screen_rect;
+        }
+        else
+        {
+            // Smooth the position changes
+            const float smooth_factor = 0.8f;
+            m_smoothed_rect.left = static_cast<LONG>(m_smoothed_rect.left * (1.0f - smooth_factor) + client_screen_rect.left * smooth_factor);
+            m_smoothed_rect.top = static_cast<LONG>(m_smoothed_rect.top * (1.0f - smooth_factor) + client_screen_rect.top * smooth_factor);
+            m_smoothed_rect.right = static_cast<LONG>(m_smoothed_rect.right * (1.0f - smooth_factor) + client_screen_rect.right * smooth_factor);
+            m_smoothed_rect.bottom = static_cast<LONG>(m_smoothed_rect.bottom * (1.0f - smooth_factor) + client_screen_rect.bottom * smooth_factor);
+        }
+
+        LONG width = m_smoothed_rect.right - m_smoothed_rect.left;
+        LONG height = m_smoothed_rect.bottom - m_smoothed_rect.top;
+
+        // Position overlay over the client area, not the entire window
+        SetWindowPos(m_hwnd, HWND_TOPMOST,
+                     m_smoothed_rect.left, m_smoothed_rect.top, width, height,
+                     SWP_NOACTIVATE);
+
+        if (width != m_size.x || height != m_size.y)
+        {
+            on_resize(vec2_t<LONG>(width, height));
+        }
+        
+        log_debug("Updated overlay position: (%d,%d) %dx%d (smoothed from %d,%d)", 
+                  m_smoothed_rect.left, m_smoothed_rect.top, width, height,
+                  client_screen_rect.left, client_screen_rect.top);
+    }
+
+    // Ensure overlay stays on top
     SetWindowPos(m_hwnd, HWND_TOPMOST, 0, 0, 0, 0,
                  SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 }

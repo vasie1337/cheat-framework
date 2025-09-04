@@ -107,4 +107,6 @@ private:
     HWND m_target_hwnd;
     RECT m_target_rect;
     MARGINS m_margins;
+    DWORD m_last_position_check;
+    RECT m_smoothed_rect;
 };
