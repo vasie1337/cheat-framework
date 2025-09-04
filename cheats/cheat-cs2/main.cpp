@@ -2,6 +2,8 @@
 #include <core/logger/logger.hpp>
 #include <core/types/vector.hpp>
 #include <core/types/matrix.hpp>
+#include <core/cache/update_manager.hpp>
+#include <core/cache/change_detector.hpp>
 #include <chrono>
 #include <unordered_set>
 
@@ -16,27 +18,12 @@ struct GameCache {
     std::vector<uintptr_t> entity_pointers;
     std::vector<CachedEntity> entities;
     std::vector<CachedPlayer> players;
-    
-    std::chrono::steady_clock::time_point last_globals_update;
-    std::chrono::steady_clock::time_point last_entity_scan;
-    
+
+    UpdateManager update_manager;
+
     static constexpr int GLOBALS_INTERVAL = 1000;
     static constexpr int ENTITY_SCAN_INTERVAL = 50;
 } game_cache;
-
-bool should_update_globals() {
-    auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now - game_cache.last_globals_update).count();
-    return elapsed >= GameCache::GLOBALS_INTERVAL;
-}
-
-bool should_scan_entities() {
-    auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now - game_cache.last_entity_scan).count();
-    return elapsed >= GameCache::ENTITY_SCAN_INTERVAL;
-}
 
 std::vector<uintptr_t> scan_entity_pointers(Core& core) {
     uintptr_t list_ptrs[MAX_LISTS]{};
@@ -53,7 +40,7 @@ std::vector<uintptr_t> scan_entity_pointers(Core& core) {
     }
 
     for (size_t i = 0; i < valid_list_ptrs.size(); i++) {
-        core.m_access_adapter->add_scatter(valid_list_ptrs[i], 
+        core.m_access_adapter->add_scatter(valid_list_ptrs[i],
             entity_chunks[i].data(), entity_chunks[i].size());
     }
     core.m_access_adapter->execute_scatter();
@@ -75,64 +62,51 @@ std::vector<uintptr_t> scan_entity_pointers(Core& core) {
     return entity_pointers;
 }
 
-bool pointers_changed(const std::vector<uintptr_t>& old_ptrs, 
-                     const std::vector<uintptr_t>& new_ptrs) {
-    if (old_ptrs.size() != new_ptrs.size()) return true;
-    
-    std::unordered_set<uintptr_t> old_set(old_ptrs.begin(), old_ptrs.end());
-    for (uintptr_t ptr : new_ptrs) {
-        if (old_set.find(ptr) == old_set.end()) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void update_entity_cache(Core& core, const std::vector<uintptr_t>& new_pointers) {
     std::vector<CachedEntity> new_entities;
-    
+
     std::unordered_map<uintptr_t, CachedEntity> old_cache;
     for (const auto& entity : game_cache.entities) {
         old_cache[entity.instance] = entity;
     }
-    
+
     for (uintptr_t instance : new_pointers) {
         CachedEntity entity;
         entity.instance = instance;
-        
+
         auto it = old_cache.find(instance);
         if (it != old_cache.end() && it->second.data_cached) {
             entity = it->second;
         }
         new_entities.push_back(entity);
     }
-    
+
     game_cache.entities = std::move(new_entities);
-    
+
     std::vector<CachedEntity*> uncached_entities;
     for (auto& entity : game_cache.entities) {
         if (!entity.data_cached) {
             uncached_entities.push_back(&entity);
         }
     }
-    
+
     if (!uncached_entities.empty()) {
         for (auto* entity : uncached_entities) {
-            core.m_access_adapter->add_scatter(entity->instance + CEntityInstance::m_pEntity, 
+            core.m_access_adapter->add_scatter(entity->instance + CEntityInstance::m_pEntity,
                 &entity->identity, sizeof(entity->identity));
-            core.m_access_adapter->add_scatter(entity->instance + C_BaseEntity::m_pGameSceneNode, 
+            core.m_access_adapter->add_scatter(entity->instance + C_BaseEntity::m_pGameSceneNode,
                 &entity->game_scene_node, sizeof(entity->game_scene_node));
         }
         core.m_access_adapter->execute_scatter();
 
         for (auto* entity : uncached_entities) {
-            core.m_access_adapter->add_scatter(entity->identity + CEntityIdentity::m_designerName, 
+            core.m_access_adapter->add_scatter(entity->identity + CEntityIdentity::m_designerName,
                 &entity->designer_name_ptr, sizeof(entity->designer_name_ptr));
         }
         core.m_access_adapter->execute_scatter();
 
         for (auto* entity : uncached_entities) {
-            core.m_access_adapter->add_scatter(entity->designer_name_ptr, 
+            core.m_access_adapter->add_scatter(entity->designer_name_ptr,
                 &entity->designer_name_buffer, sizeof(entity->designer_name_buffer));
         }
         core.m_access_adapter->execute_scatter();
@@ -146,67 +120,67 @@ void update_entity_cache(Core& core, const std::vector<uintptr_t>& new_pointers)
 
 void update_player_cache(Core& core) {
     std::vector<CachedPlayer> new_players;
-    
+
     std::unordered_map<uintptr_t, CachedPlayer> old_player_cache;
     for (const auto& player : game_cache.players) {
         old_player_cache[player.entity.instance] = player;
     }
-    
+
     for (const auto& entity : game_cache.entities) {
         if (entity.designer_name == "cs_player_controller") {
             CachedPlayer player;
             player.entity = entity;
-            
+
             auto it = old_player_cache.find(entity.instance);
             if (it != old_player_cache.end() && it->second.data_cached) {
                 player = it->second;
                 player.entity = entity;
             }
-            
+
             new_players.push_back(player);
         }
     }
-    
+
     game_cache.players = std::move(new_players);
-    
+
     std::vector<CachedPlayer*> uncached_players;
     for (auto& player : game_cache.players) {
         if (!player.data_cached) {
             uncached_players.push_back(&player);
         }
     }
-    
+
     if (!uncached_players.empty()) {
         for (auto* player : uncached_players) {
-            core.m_access_adapter->add_scatter(player->entity.instance + CCSPlayerController::m_hPlayerPawn, 
+            core.m_access_adapter->add_scatter(player->entity.instance + CCSPlayerController::m_hPlayerPawn,
                 &player->controller_pawn, sizeof(player->controller_pawn));
         }
         core.m_access_adapter->execute_scatter();
 
         for (auto* player : uncached_players) {
-            core.m_access_adapter->add_scatter(game_cache.ent_list + 0x8 * ((player->controller_pawn & 0x7FFF) >> 0X9) + 0x10, 
+            core.m_access_adapter->add_scatter(game_cache.ent_list + 0x8 * ((player->controller_pawn & 0x7FFF) >> 0X9) + 0x10,
                 &player->list_pawn, sizeof(player->list_pawn));
         }
         core.m_access_adapter->execute_scatter();
 
         for (auto* player : uncached_players) {
-            core.m_access_adapter->add_scatter(player->list_pawn + 0x78 * (player->controller_pawn & 0x1FF), 
+            core.m_access_adapter->add_scatter(player->list_pawn + 0x78 * (player->controller_pawn & 0x1FF),
                 &player->player_pawn, sizeof(player->player_pawn));
         }
         core.m_access_adapter->execute_scatter();
 
         for (auto* player : uncached_players) {
-            core.m_access_adapter->add_scatter(player->player_pawn + C_BaseEntity::m_pGameSceneNode, 
+            core.m_access_adapter->add_scatter(player->player_pawn + C_BaseEntity::m_pGameSceneNode,
                 &player->entity.game_scene_node, sizeof(player->entity.game_scene_node));
         }
         core.m_access_adapter->execute_scatter();
 
         for (auto* player : uncached_players) {
-            core.m_access_adapter->add_scatter(player->entity.game_scene_node + CSkeletonInstance::m_modelState + 0x80, 
+            core.m_access_adapter->add_scatter(player->entity.game_scene_node + CSkeletonInstance::m_modelState + 0x80,
                 &player->bone_array, sizeof(player->bone_array));
         }
         core.m_access_adapter->execute_scatter();
-        
+
         for (auto* player : uncached_players) {
             player->data_cached = true;
         }
@@ -217,29 +191,26 @@ static void reader(Core& core) {
     core.m_access_adapter->add_scatter(game_cache.client_dll + dwViewMatrix,
         &game_cache.view_matrix, sizeof(game_cache.view_matrix));
 
-    if (should_update_globals()) {
+    if (game_cache.update_manager.should_update("globals", GameCache::GLOBALS_INTERVAL)) {
         core.m_access_adapter->add_scatter(game_cache.client_dll + dwLocalPlayerPawn,
             &game_cache.local_player_ptr, sizeof(game_cache.local_player_ptr));
         core.m_access_adapter->add_scatter(game_cache.client_dll + dwEntityList,
             &game_cache.ent_list, sizeof(game_cache.ent_list));
-        game_cache.last_globals_update = std::chrono::steady_clock::now();
     }
 
     core.m_access_adapter->execute_scatter();
-    
-    if (should_scan_entities()) {
+
+    if (game_cache.update_manager.should_update("entity_scan", GameCache::ENTITY_SCAN_INTERVAL)) {
         auto new_pointers = scan_entity_pointers(core);
-        
-        if (pointers_changed(game_cache.entity_pointers, new_pointers)) {
+
+        if (has_changed(game_cache.entity_pointers, new_pointers)) {
             log_debug("Entity list changed, updating cache");
             game_cache.entity_pointers = new_pointers;
             update_entity_cache(core, new_pointers);
             update_player_cache(core);
         }
-        
-        game_cache.last_entity_scan = std::chrono::steady_clock::now();
     }
-    
+
     for (auto& entity : game_cache.entities) {
         if (entity.data_cached && entity.game_scene_node != 0) {
             core.m_access_adapter->add_scatter(entity.game_scene_node + CGameSceneNode::m_vecOrigin,
@@ -261,7 +232,7 @@ static void renderer(Core& core) {
 
     for (const auto& player : game_cache.players) {
         if (!player.data_cached) continue;
-        
+
         for (const auto& bone : player.bones) {
             vec2_t<float> screen_position;
             if (core.m_projection_utils->WorldToScreen(bone.position, screen_position, game_cache.view_matrix)) {
@@ -295,10 +266,10 @@ int main() {
     }
 
     game_cache.client_dll = core->m_access_adapter->get_module("client.dll")->base;
-    
-    auto now = std::chrono::steady_clock::now();
-    game_cache.last_globals_update = now - std::chrono::milliseconds(GameCache::GLOBALS_INTERVAL + 1);
-    game_cache.last_entity_scan = now - std::chrono::milliseconds(GameCache::ENTITY_SCAN_INTERVAL + 1);
+
+    // Force initial updates by using force_update
+    game_cache.update_manager.force_update("globals");
+    game_cache.update_manager.force_update("entity_scan");
 
     core->register_function(reader);
     core->register_function(renderer);

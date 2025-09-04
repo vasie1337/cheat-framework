@@ -47,6 +47,8 @@
     <ClInclude Include="access\local\winapi.hpp" />
     <ClInclude Include="access\remote\dma.hpp" />
     <ClInclude Include="access\template\tadapter.hpp" />
+    <ClInclude Include="cache\change_detector.hpp" />
+    <ClInclude Include="cache\update_manager.hpp" />
     <ClInclude Include="config\config.hpp" />
     <ClInclude Include="core.hpp" />
     <ClInclude Include="logger\logger.hpp" />

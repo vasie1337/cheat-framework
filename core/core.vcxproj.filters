@@ -66,6 +66,8 @@
     <ClInclude Include="types\matrix.hpp" />
     <ClInclude Include="projection\projection.hpp" />
     <ClInclude Include="config\config.hpp" />
+    <ClInclude Include="cache\update_manager.hpp" />
+    <ClInclude Include="cache\change_detector.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">
