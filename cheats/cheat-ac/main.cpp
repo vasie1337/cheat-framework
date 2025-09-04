@@ -1,45 +1,26 @@
-// assault_cube_cache.hpp
 #pragma once
 #include <core/core.hpp>
 #include <core/logger/logger.hpp>
 #include <core/types/vector.hpp>
 #include <core/types/matrix.hpp>
 
-struct CachedPlayer {
-    uint32_t pointer = 0;
-    vec3_t<float> position;
-    int health = 0;
-    int team = 0;
+#include "sdk/sdk.hpp"
 
-    bool data_cached = false;
-};
+struct GameCache {
+    uint32_t game_base = 0;
+    uint32_t player_list_ptr = 0;
+    int player_list_count = 0;
+    matrix4x4_t<float> view_matrix;
+    std::vector<uint32_t> last_player_pointers;
+    std::vector<CachedPlayer> cached_players;
 
-static uint32_t game_base_ = 0;
-static uint32_t player_list_ptr_ = 0;
-static int player_list_count_ = 0;
-static matrix4x4_t<float> view_matrix_;
-static std::vector<uint32_t> last_player_pointers_;
-static std::vector<CachedPlayer> cached_players_;
-
-static constexpr int GLOBALS_INTERVAL = 1000;
-static constexpr int PLAYER_SCAN_INTERVAL = 100;
-
-static void update_globals(Core& core) {
-    if (!game_base_) {
-        game_base_ = static_cast<uint32_t>(
-            core.m_access_adapter->get_module("ac_client.exe")->base);
-    }
-
-    core.m_access_adapter->add_scatter(game_base_ + 0x18AC04,
-        &player_list_ptr_, sizeof(uint32_t));
-    core.m_access_adapter->add_scatter(game_base_ + 0x18AC0C,
-        &player_list_count_, sizeof(int));
-    core.m_access_adapter->execute_scatter();
-}
+    static constexpr int GLOBALS_INTERVAL = 1000;
+    static constexpr int PLAYER_SCAN_INTERVAL = 50;
+} game_cache;
 
 static void cache_static_player_data(Core& core) {
     std::vector<CachedPlayer*> uncached_players;
-    for (auto& player : cached_players_) {
+    for (auto& player : game_cache.cached_players) {
         if (!player.data_cached && player.pointer != 0) {
             uncached_players.push_back(&player);
         }
@@ -63,7 +44,7 @@ static void cache_static_player_data(Core& core) {
 
 static void update_player_cache(const std::vector<uint32_t>& new_pointers, Core& core) {
     std::unordered_map<uint32_t, CachedPlayer> old_cache;
-    for (const auto& player : cached_players_) {
+    for (const auto& player : game_cache.cached_players) {
         old_cache[player.pointer] = player;
     }
 
@@ -79,30 +60,35 @@ static void update_player_cache(const std::vector<uint32_t>& new_pointers, Core&
         new_players.push_back(player);
     }
 
-    cached_players_ = std::move(new_players);
+    game_cache.cached_players = std::move(new_players);
     cache_static_player_data(core);
 }
 
 static void update_player_list(Core& core) {
-    if (player_list_count_ <= 1) return;
+    if (game_cache.player_list_count <= 1) return;
 
-    std::vector<uint32_t> current_pointers(player_list_count_);
-    for (int i = 0; i < player_list_count_; ++i) {
+    std::vector<uint32_t> current_pointers(game_cache.player_list_count);
+    for (int i = 0; i < game_cache.player_list_count; ++i) {
         core.m_access_adapter->add_scatter(
-            player_list_ptr_ + i * sizeof(uint32_t),
+            game_cache.player_list_ptr + i * sizeof(uint32_t),
             &current_pointers[i], sizeof(uint32_t));
     }
     core.m_access_adapter->execute_scatter();
 
-    if (has_changed(last_player_pointers_, current_pointers)) {
+    if (has_changed(game_cache.last_player_pointers, current_pointers)) {
         log_debug("Player list changed, updating cache");
-        last_player_pointers_ = current_pointers;
+        game_cache.last_player_pointers = current_pointers;
         update_player_cache(current_pointers, core);
     }
 }
 
-static void update_player_positions(Core& core) {
-    for (auto& player : cached_players_) {
+static void reader(Core& core) {
+    if (core.m_update_manager->should_update("globals", game_cache.GLOBALS_INTERVAL)) {
+        core.m_access_adapter->add_scatter(game_cache.game_base + 0x18AC04, &game_cache.player_list_ptr, sizeof(uint32_t));
+        core.m_access_adapter->add_scatter(game_cache.game_base + 0x18AC0C, &game_cache.player_list_count, sizeof(int));
+    }
+
+    for (auto& player : game_cache.cached_players) {
         if (player.pointer != 0) {
             core.m_access_adapter->add_scatter(
                 player.pointer + 0x4,
@@ -110,55 +96,26 @@ static void update_player_positions(Core& core) {
         }
     }
 
-    if (!cached_players_.empty()) {
-        core.m_access_adapter->execute_scatter();
-    }
-}
-
-static void update_cache(Core& core) {
-    if (core.m_update_manager->should_update("globals", GLOBALS_INTERVAL)) {
-        update_globals(core);
-    }
-
-    core.m_access_adapter->add_scatter(game_base_ + 0x17DFD0, &view_matrix_, sizeof(matrix4x4_t<float>));
+    core.m_access_adapter->add_scatter(game_cache.game_base + 0x17DFD0, &game_cache.view_matrix, sizeof(matrix4x4_t<float>));
     core.m_access_adapter->execute_scatter();
 
-    if (core.m_update_manager->should_update("player_scan", PLAYER_SCAN_INTERVAL)) {
+    if (core.m_update_manager->should_update("player_scan", game_cache.PLAYER_SCAN_INTERVAL)) {
         update_player_list(core);
     }
 
-    update_player_positions(core);
-}
-
-static const std::vector<CachedPlayer>& get_players() {
-    return cached_players_;
-}
-
-static const matrix4x4_t<float>& get_view_matrix() {
-    return view_matrix_;
-}
-
-static int get_player_count() {
-    return player_list_count_;
-}
-
-static void reader(Core& core) {
-    update_cache(core);
+    core.m_access_adapter->execute_scatter();
 }
 
 static void renderer(Core& core) {
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
 
-    for (const auto& player : get_players()) {
+    for (const auto& player : game_cache.cached_players) {
         if (player.pointer == 0) continue;
 
         vec2_t<float> screen_position;
-        if (core.m_projection_utils->WorldToScreenDX(
-            player.position, screen_position, get_view_matrix())) {
+        if (core.m_projection_utils->WorldToScreenDX(player.position, screen_position, game_cache.view_matrix)) {
 
-            draw_list->AddCircleFilled(
-                ImVec2(screen_position.x, screen_position.y),
-                5.f, IM_COL32(255, 0, 0, 255), 8);
+            draw_list->AddCircleFilled(ImVec2(screen_position.x, screen_position.y), 5.f, IM_COL32(255, 0, 0, 255), 8);
         }
     }
 }
@@ -176,6 +133,8 @@ int main() {
         log_critical("Failed to initialize core");
         return 1;
     }
+
+    game_cache.game_base = static_cast<uint32_t>(core->m_access_adapter->get_module("ac_client.exe")->base);
 
     core->m_update_manager->force_update("globals");
     core->m_update_manager->force_update("entity_scan");
