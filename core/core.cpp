@@ -78,16 +78,15 @@ bool Core::update()
 
 	if (m_show_widgets)
 	{
-		ImVec2 ScreenSize = ImGui::GetIO().DisplaySize;
-		ImVec2 WindowSize = ImVec2(300, 200);
-		ImVec2 WindowPos = ImVec2(ScreenSize.x / 2 - WindowSize.x / 2, ScreenSize.y / 2 - WindowSize.y / 2);
+		ImVec2 screen_size = ImGui::GetIO().DisplaySize;
+		ImVec2 window_size = ImVec2(300, 200);
+		ImVec2 window_pos = ImVec2(screen_size.x / 2 - window_size.x / 2, screen_size.y / 2 - window_size.y / 2);
 
-		ImGui::SetNextWindowSize(WindowSize, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(WindowPos, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(window_size, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(window_pos, ImGuiCond_FirstUseEver);
 		ImGui::Begin("Overlay Menu", nullptr, ImGuiWindowFlags_NoCollapse);
 		{
-			auto fps = m_renderer->get_fps();
-			ImGui::Text("FPS: %f", fps);
+			ImGui::Text("FPS: %f", m_renderer->get_fps());
 		}
 		ImGui::End();
 	}
