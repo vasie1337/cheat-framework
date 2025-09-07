@@ -86,13 +86,13 @@
     <OutDir>$(SolutionDir)build\</OutDir>
     <IntDir>$(SolutionDir)build\$(ProjectName)\</IntDir>
     <IncludePath>$(ProjectDir);$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)build\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)build\</OutDir>
     <IntDir>$(SolutionDir)build\$(ProjectName)\</IntDir>
     <IncludePath>$(ProjectDir);$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)build\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgInstalledDir>C:\Users\vasie\vcpkg\installed</VcpkgInstalledDir>

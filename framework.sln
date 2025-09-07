@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36202.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "core\core.vcxproj", "{B3CC6BFC-40BF-40C7-9A52-C730F84ADCBC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F02F56B1-10CD-4654-B744-93ABE6E15FF0} = {F02F56B1-10CD-4654-B744-93ABE6E15FF0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cheat-ac", "cheats\cheat-ac\cheat-ac.vcxproj", "{7FF32420-885B-4F70-A69C-8412F5CADAA2}"
 	ProjectSection(ProjectDependencies) = postProject
