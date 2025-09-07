@@ -109,13 +109,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)lib\</OutDir>
-    <IntDir>$(SolutionDir)lib\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\</OutDir>
+    <IntDir>$(SolutionDir)build\$(ProjectName)\</IntDir>
     <IncludePath>$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)lib\</OutDir>
-    <IntDir>$(SolutionDir)lib\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)build\</OutDir>
+    <IntDir>$(SolutionDir)build\$(ProjectName)\</IntDir>
     <IncludePath>$(SolutionDir);$(SolutionDir)ext\imgui\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
