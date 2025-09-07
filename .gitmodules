@@ -1,3 +1,6 @@
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "ext/dma-lib"]
+	path = ext/dma-lib
+	url = https://github.com/vasie1337/dma-lib
